@@ -64,6 +64,7 @@ struct _mmd_s
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
 static void     mmd_parse_inline(mmd_t *parent, char *line);
+static char     *mmd_parse_link(char *lineptr, char **text, char **url);
 static void     mmd_remove(mmd_t *node);
 
 
@@ -140,6 +141,43 @@ mmd_t *                                 /* O - Last child or @code NULL@ if none
 mmdGetLastChild(mmd_t *node)            /* I - Node */
 {
   return (node ? node->last_child : NULL);
+}
+
+
+/*
+ * 'mmdGetMetadata()' - Return the metadata for the given keyword.
+ */
+
+const char *                            /* O - Value or @code NULL@ if none */
+mmdGetMetadata(mmd_t      *doc,         /* I - Document */
+               const char *keyword)     /* I - Keyword */
+{
+  mmd_t         *metadata,              /* Metadata node */
+                *current;               /* Current node */
+  char          prefix[256];            /* Prefix string */
+  size_t        prefix_len;             /* Length of prefix string */
+  const char    *value;                 /* Pointer to value */
+
+
+  if (!doc || (metadata = doc->first_child) == NULL || metadata->type != MMD_TYPE_METADATA)
+    return (NULL);
+
+  snprintf(prefix, sizeof(prefix), "%s:", keyword);
+  prefix_len = strlen(prefix);
+
+  for (current = metadata->first_child; current; current = current->next_sibling)
+  {
+    if (strncmp(current->text, prefix, prefix_len))
+      continue;
+
+    value = current->text + prefix_len;
+    while (isspace(*value & 255))
+      value ++;
+
+    return (value);
+  }
+
+  return (NULL);
 }
 
 
@@ -244,7 +282,8 @@ mmdLoad(const char *filename)           /* I - File to load */
                 *block = NULL;          /* Current block */
   mmd_type_t    type;                   /* Type for line */
   char          line[65536],            /* Line from file */
-                *lineptr;               /* Pointer into line */
+                *lineptr,               /* Pointer into line */
+                *lineend;               /* End of line */
 
 
  /*
@@ -267,17 +306,84 @@ mmdLoad(const char *filename)           /* I - File to load */
     while (isspace(*lineptr & 255))
       lineptr ++;
 
-    if ((lineptr - line) >= 4)
+    if ((lineptr - line) >= 4 && !block && (current == doc || current->type == MMD_TYPE_CODE_BLOCK))
     {
      /*
       * Indented code block.
       */
 
-      if (current == doc || current->type != MMD_TYPE_CODE_BLOCK)
+      if (current == doc)
         current = mmd_add(doc, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
 
       mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line + 4, NULL);
       continue;
+    }
+    else if (*lineptr == '`' && (!lineptr[1] || lineptr[1] == '`'))
+    {
+      if (block)
+      {
+        if (block->type == MMD_TYPE_CODE_BLOCK)
+          block = NULL;
+        else if (block->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        else if (block->parent->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        else
+          block = mmd_add(current, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+      }
+      else
+        block = mmd_add(current, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+
+      continue;
+    }
+
+    if (block && block->type == MMD_TYPE_CODE_BLOCK)
+    {
+      mmd_add(block, MMD_TYPE_CODE_TEXT, 0, line, NULL);
+      continue;
+    }
+    else if (!strncmp(lineptr, "---", 3) && doc->first_child == NULL)
+    {
+     /*
+      * Document metadata...
+      */
+
+      block = mmd_add(doc, MMD_TYPE_METADATA, 0, NULL, NULL);
+
+      while (fgets(line, sizeof(line), fp))
+      {
+        lineptr = line;
+
+        while (isspace(*lineptr & 255))
+          lineptr ++;
+
+        if (!strncmp(line, "---", 3) || !strncmp(line, "...", 3))
+          break;
+
+        lineend = lineptr + strlen(lineptr) - 1;
+        if (lineend > lineptr && *lineend == '\n')
+          *lineend = '\0';
+
+        mmd_add(block, MMD_TYPE_METADATA_TEXT, 0, lineptr, NULL);
+      }
+
+      block = NULL;
+      continue;
+    }
+    else if (!block && (!strncmp(lineptr, "---", 3) || !strncmp(lineptr, "***", 3) || !strncmp(lineptr, "___", 3)))
+    {
+      int ch = *lineptr;
+
+      lineptr += 3;
+      while (*lineptr && (*lineptr == ch || isspace(*lineptr & 255)))
+        lineptr ++;
+
+      if (!*lineptr)
+      {
+        block = NULL;
+        mmd_add(current, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
+        continue;
+      }
     }
 
     if (*lineptr == '>')
@@ -298,16 +404,52 @@ mmdLoad(const char *filename)           /* I - File to load */
       while (isspace(*lineptr & 255))
         lineptr ++;
     }
+    else if (current->type == MMD_TYPE_BLOCK_QUOTE)
+      current = current->parent;
 
     if (!*lineptr)
     {
-      block   = NULL;
-      current = doc;
+      if (current->type == MMD_TYPE_CODE_BLOCK)
+        mmd_add(current, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
 
+      block = NULL;
       continue;
     }
+    else if (!strcmp(lineptr, "+"))
+    {
+      if (block)
+      {
+        if (block->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
+        else if (block->parent->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block->parent, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
+        else
+          block = NULL;
+      }
+      continue;
+    }
+    else if (block && block->type == MMD_TYPE_PARAGRAPH && (!strncmp(lineptr, "---", 3) || !strncmp(lineptr, "===", 3)))
+    {
+      int ch = *lineptr;
 
-    if (*lineptr == '-' && isspace(lineptr[1] & 255))
+      lineptr += 3;
+      while (*lineptr == ch)
+        lineptr ++;
+      while (isspace(*lineptr & 255))
+        lineptr ++;
+
+      if (!*lineptr)
+      {
+        if (ch == '=')
+          block->type = MMD_TYPE_HEADING_1;
+        else
+          block->type = MMD_TYPE_HEADING_2;
+
+        block = NULL;
+        continue;
+      }
+    }
+    else if ((*lineptr == '-' || *lineptr == '+' || *lineptr == '*') && isspace(lineptr[1] & 255))
     {
      /*
       * Bulleted list...
@@ -317,7 +459,9 @@ mmdLoad(const char *filename)           /* I - File to load */
       while (isspace(*lineptr & 255))
         lineptr ++;
 
-      if (current == doc || current->type != MMD_TYPE_ORDERED_LIST)
+      if (current == doc && doc->last_child && doc->last_child->type == MMD_TYPE_UNORDERED_LIST)
+        current = doc->last_child;
+      else if (current->type != MMD_TYPE_UNORDERED_LIST)
         current = mmd_add(current, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
 
       type = MMD_TYPE_LIST_ITEM;
@@ -343,7 +487,9 @@ mmdLoad(const char *filename)           /* I - File to load */
         while (isspace(*lineptr & 255))
           lineptr ++;
 
-        if (current == doc || current->type != MMD_TYPE_ORDERED_LIST)
+        if (current == doc && doc->last_child && doc->last_child->type == MMD_TYPE_ORDERED_LIST)
+          current = doc->last_child;
+        else if (current->type != MMD_TYPE_ORDERED_LIST)
           current = mmd_add(current, MMD_TYPE_ORDERED_LIST, 0, NULL, NULL);
 
         type  = MMD_TYPE_LIST_ITEM;
@@ -369,25 +515,48 @@ mmdLoad(const char *filename)           /* I - File to load */
       while (*temp == '#')
         temp ++;
 
-      type = MMD_TYPE_HEADING_1 + (temp - lineptr);
+      if ((temp - lineptr) <= 6)
+      {
+       /*
+        * Heading 1-6...
+        */
 
-     /*
-      * Skip whitespace after "#"...
-      */
+        type = MMD_TYPE_HEADING_1 + (temp - lineptr - 1);
 
-      lineptr = temp;
-      while (isspace(*lineptr & 255))
-        lineptr ++;
+       /*
+        * Skip whitespace after "#"...
+        */
 
-     /*
-      * Strip trailing "#" characters...
-      */
+        lineptr = temp;
+        while (isspace(*lineptr & 255))
+          lineptr ++;
 
-      for (temp = lineptr + strlen(lineptr) - 1; temp > lineptr && *temp == '#'; temp --)
-        *temp = '\0';
+       /*
+        * Strip trailing "#" characters...
+        */
+
+        for (temp = lineptr + strlen(lineptr) - 1; temp > lineptr && *temp == '#'; temp --)
+          *temp = '\0';
+      }
+      else
+      {
+       /*
+        * More than 6 #'s, just treat as a paragraph...
+        */
+
+        type = MMD_TYPE_PARAGRAPH;
+      }
+    }
+    else if (!block)
+    {
+      type = MMD_TYPE_PARAGRAPH;
+
+      if (lineptr == line)
+        current = doc;
     }
     else
-      type = block ? block->type : MMD_TYPE_PARAGRAPH;
+      type = block->type;
+
 
     if (!block || block->type != type)
       block = mmd_add(current, type, 0, NULL, NULL);
@@ -483,8 +652,8 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
   mmd_type_t    type;                   /* Current node type */
   int           whitespace;             /* Whitespace precedes? */
   char          *lineptr,               /* Pointer into line */
-                *text;                  /* Text fragment in line */
-//                *link;                  /* Link in line */
+                *text,                  /* Text fragment in line */
+                *url;                   /* URL in link */
 
 
   whitespace = parent->last_child != NULL;
@@ -506,8 +675,65 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
     {
       if (*lineptr == '\\' && lineptr[1])
       {
+       /*
+        * Escaped character...
+        */
+
         lineptr ++;
         text = lineptr;
+      }
+      else if (*lineptr == '!' && lineptr[1] == '[')
+      {
+       /*
+        * Image...
+        */
+
+        lineptr = mmd_parse_link(lineptr + 1, &text, &url);
+
+        if (url)
+          mmd_add(parent, MMD_TYPE_IMAGE, whitespace, text, url);
+
+        if (!*lineptr)
+          return;
+
+        text = url = NULL;
+        whitespace = 0;
+        lineptr --;
+      }
+      else if (*lineptr == '[')
+      {
+       /*
+        * Link...
+        */
+
+        lineptr = mmd_parse_link(lineptr, &text, &url);
+
+        if (text)
+          mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+
+        if (!*lineptr)
+          return;
+
+        text = url = NULL;
+        whitespace = 0;
+        lineptr --;
+      }
+      else if (*lineptr == '<' && strchr(lineptr + 1, '>'))
+      {
+       /*
+        * Autolink...
+        */
+
+        url     = lineptr + 1;
+        lineptr = strchr(lineptr + 1, '>');
+
+        *lineptr++ = '\0';
+
+        mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, url, url);
+
+        text = url = NULL;
+        whitespace = 0;
+        lineptr --;
       }
       else if (*lineptr == '`')
       {
@@ -560,10 +786,88 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
       text       = NULL;
       whitespace = 0;
     }
+    else if (*lineptr == '\\' && lineptr[1])
+    {
+     /*
+      * Escaped character...
+      */
+
+      memmove(lineptr, lineptr + 1, strlen(lineptr));
+    }
   }
 
   if (text)
     mmd_add(parent, type, whitespace, text, NULL);
+}
+
+
+/*
+ * 'mmd_parse_link()' - Parse a link.
+ */
+
+static char *                           /* O - End of link text */
+mmd_parse_link(char *lineptr,           /* I - Pointer into line */
+               char **text,             /* O - Text */
+               char **url)              /* O - URL */
+{
+  lineptr ++; /* skip "[" */
+
+  *text = lineptr;
+  *url  = NULL;
+
+  while (*lineptr && *lineptr != ']')
+  {
+    if (*lineptr == '\"')
+    {
+      lineptr ++;
+      while (*lineptr && *lineptr != '\"')
+        lineptr ++;
+
+      if (!*lineptr)
+        return (lineptr);
+    }
+
+    lineptr ++;
+  }
+
+  if (!*lineptr)
+    return (lineptr);
+
+  *lineptr++ = '\0';
+
+  while (isspace(*lineptr & 255))
+    lineptr ++;
+
+  if (*lineptr == '(')
+  {
+   /*
+    * Get URL...
+    */
+
+    lineptr ++;
+    *url = lineptr;
+
+    while (*lineptr && *lineptr != ')')
+    {
+      if (isspace(*lineptr & 255))
+        *lineptr = '\0';
+      else if (*lineptr == '\"')
+      {
+        lineptr ++;
+        while (*lineptr && *lineptr != '\"')
+          lineptr ++;
+
+        if (!*lineptr)
+          return (lineptr);
+      }
+
+      lineptr ++;
+    }
+
+    *lineptr++ = '\0';
+  }
+
+  return (lineptr);
 }
 
 

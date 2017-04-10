@@ -44,6 +44,6 @@ clean:
 
 testmmd:	$(OBJS)
 	$(CC) $(CFLAGS) -o testmmd $(OBJS) $(LIBS)
-	./testmmd DOCUMENTATION.md >DOCUMENTATION.html
+	./testmmd testmmd.md >testmmd.html
 
 $(OBJS):	mmd.h

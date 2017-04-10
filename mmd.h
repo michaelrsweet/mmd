@@ -44,6 +44,7 @@ typedef enum mmd_type_e
 {
   MMD_TYPE_NONE = -1,
   MMD_TYPE_DOCUMENT,
+  MMD_TYPE_METADATA,
   MMD_TYPE_BLOCK_QUOTE,
   MMD_TYPE_ORDERED_LIST,
   MMD_TYPE_UNORDERED_LIST,
@@ -65,7 +66,8 @@ typedef enum mmd_type_e
   MMD_TYPE_CODE_TEXT,
   MMD_TYPE_IMAGE,
   MMD_TYPE_HARD_BREAK,
-  MMD_TYPE_SOFT_BREAK
+  MMD_TYPE_SOFT_BREAK,
+  MMD_TYPE_METADATA_TEXT
 } mmd_type_t;
 
 
@@ -83,6 +85,7 @@ typedef struct _mmd_s mmd_t;
 extern void       mmdFree(mmd_t *node);
 extern mmd_t      *mmdGetFirstChild(mmd_t *node);
 extern mmd_t      *mmdGetLastChild(mmd_t *node);
+extern const char *mmdGetMetadata(mmd_t *doc, const char *keyword);
 extern mmd_t      *mmdGetNextSibling(mmd_t *node);
 extern mmd_t      *mmdGetParent(mmd_t *node);
 extern mmd_t      *mmdGetPrevSibling(mmd_t *node);

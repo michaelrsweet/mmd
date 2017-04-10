@@ -46,8 +46,10 @@
  * Local functions...
  */
 
-static void     write_block(mmd_t *parent);
-static void     write_inline(mmd_t *node);
+static const char *make_anchor(const char *text);
+static void       write_block(mmd_t *parent);
+static void       write_html(const char *s);
+static void       write_inline(mmd_t *node);
 
 
 /*
@@ -58,7 +60,8 @@ int					/* O - Exit status */
 main(int  argc,				/* I - Number of command-line arguments */
      char *argv[])			/* I - Command-line arguments */
 {
-  mmd_t *doc;                           /* Document */
+  mmd_t         *doc;                   /* Document */
+  const char    *title;                 /* Title */
 
 
   if (argc != 2)
@@ -73,10 +76,36 @@ main(int  argc,				/* I - Number of command-line arguments */
     return (1);
   }
 
+  title = mmdGetMetadata(doc, "title");
+
   puts("<!DOCTYPE html>");
   puts("<html");
   puts("  <head>");
-  puts("    <title>Test Document</title>");
+  fputs("    <title>", stdout);
+  write_html(title ? title : "Unknown");
+  puts("</title>");
+  puts("  <style><!--");
+  puts("body {");
+  puts("  font-family: sans-serif;");
+  puts("  font-size: 18px;");
+  puts("  line-height: 150%;");
+  puts("}");
+  puts("pre, li code, p code {");
+  puts("  background: #f8f8f8;");
+  puts("  border: solid thin #666;");
+  puts("  font-family: monospace;");
+  puts("  font-size: 14px;");
+  puts("}");
+  puts("pre {");
+  puts("  line-height: 120%;");
+  puts("  margin-left: 1em;");
+  puts("  margin-right: 1em;");
+  puts("  padding: 10px;");
+  puts("}");
+  puts("li code, p code {");
+  puts("  padding: 2px 5px;");
+  puts("}");
+  puts("--></style>");
   puts("  </head>");
   puts("  <body>");
 
@@ -92,6 +121,29 @@ main(int  argc,				/* I - Number of command-line arguments */
 
 
 /*
+ * 'make_anchor()' - Make an anchor for internal links.
+ */
+
+static const char *                     /* O - Anchor string */
+make_anchor(const char *text)           /* I - Text */
+{
+  char          *bufptr;                /* Pointer into buffer */
+  static char   buffer[1024];           /* Buffer for anchor string */
+
+
+  for (bufptr = buffer; *text && bufptr < (buffer + sizeof(buffer) - 1); text ++)
+  {
+    if ((*text >= '0' && *text <= '9') || (*text >= 'a' && *text <= 'z') || (*text >= 'A' && *text <= 'Z') || *text == '.' || *text == '-')
+      *bufptr++ = *text;
+  }
+
+  *bufptr = '\0';
+
+  return (buffer);
+}
+
+
+/*
  * 'write_block()' - Write a block as HTML.
  */
 
@@ -100,9 +152,10 @@ write_block(mmd_t *parent)              /* I - Parent node */
 {
   const char    *element;               /* Enclosing element, if any */
   mmd_t         *node;                  /* Current child node */
+  mmd_type_t    type;                   /* Node type */
 
 
-  switch (mmdGetType(parent))
+  switch (type = mmdGetType(parent))
   {
     case MMD_TYPE_BLOCK_QUOTE :
         element = "blockquote";
@@ -149,11 +202,14 @@ write_block(mmd_t *parent)              /* I - Parent node */
         break;
 
     case MMD_TYPE_CODE_BLOCK :
-        element = "pre";
-        break;
+        fputs("    <pre><code>", stdout);
+        for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
+          write_html(mmdGetText(node));
+        puts("</code></pre>");
+        return;
 
     case MMD_TYPE_THEMATIC_BREAK :
-        puts("<hr />");
+        puts("    <hr />");
         return;
 
     default :
@@ -161,8 +217,19 @@ write_block(mmd_t *parent)              /* I - Parent node */
         break;
   }
 
-  if (element)
-    printf("    <%s>%s", element, mmdGetType(parent) <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
+  if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
+  {
+   /*
+    * Add an anchor...
+    */
+
+    printf("    <%s><a id=\"", element);
+    for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
+      fputs(make_anchor(mmdGetText(node)), stdout);
+    fputs("\">", stdout);
+  }
+  else if (element)
+    printf("    <%s>%s", element, type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {
@@ -172,8 +239,38 @@ write_block(mmd_t *parent)              /* I - Parent node */
       write_inline(node);
   }
 
-  if (element)
+  if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
+    printf("</a></%s>\n", element);
+  else if (element)
     printf("</%s>\n", element);
+}
+
+
+/*
+ * 'write_html()' - Write text to stdout as HTML.
+ */
+
+static void
+write_html(const char *text)            /* I - Text string */
+{
+  if (!text)
+    return;
+
+  while (*text)
+  {
+    if (*text == '&')
+      fputs("&amp;", stdout);
+    else if (*text == '<')
+      fputs("&lt;", stdout);
+    else if (*text == '>')
+      fputs("&gt;", stdout);
+    else if (*text == '\"')
+      fputs("&quot;", stdout);
+    else
+      putchar(*text);
+
+    text ++;
+  }
 }
 
 
@@ -188,6 +285,12 @@ write_inline(mmd_t *node)               /* I - Inline node */
                 *text,                  /* Text to write */
                 *url;                   /* URL to write */
 
+
+  if (mmdGetWhitespace(node))
+    putchar(' ');
+
+  text = mmdGetText(node);
+  url  = mmdGetURL(node);
 
   switch (mmdGetType(node))
   {
@@ -211,8 +314,23 @@ write_inline(mmd_t *node)               /* I - Inline node */
         element = "code";
         break;
 
+    case MMD_TYPE_IMAGE :
+        fputs("<img src=\"", stdout);
+        write_html(url);
+        fputs("\" alt=\"", stdout);
+        write_html(text);
+        fputs("\" />", stdout);
+        return;
+
     case MMD_TYPE_HARD_BREAK :
         puts("<br />");
+        return;
+
+    case MMD_TYPE_SOFT_BREAK :
+        puts("<wbr />");
+        return;
+
+    case MMD_TYPE_METADATA_TEXT :
         return;
 
     default :
@@ -220,52 +338,24 @@ write_inline(mmd_t *node)               /* I - Inline node */
         break;
   }
 
-  if (mmdGetWhitespace(node))
-    putchar(' ');
-
-  text = mmdGetText(node);
-  url  = mmdGetURL(node);
-
   if (url)
-    printf("<a href=\"%s\">", url);
+  {
+    if (!strcmp(url, "@"))
+      printf("<a href=\"#%s\">", make_anchor(text));
+    else
+      printf("<a href=\"%s\">", url);
+  }
   else if (element)
     printf("<%s>", element);
 
-  while (*text)
-  {
-    if (*text == '&')
-    {
-     /*
-      * See if this is an HTML entity...
-      */
-
-      if ((isalpha(text[1] & 255) || text[1] == '#') && strchr(text, ';'))
-      {
-       /*
-        * Yes, copy it over...
-        */
-
-        while (*text != ';')
-          putchar(*text++);
-
-        putchar(';');
-      }
-      else
-      {
-       /*
-        * No, just escape this ampersand...
-        */
-
-        fputs("&amp;", stdout);
-      }
-    }
-    else if (*text == '<')
-      fputs("&lt;", stdout);
-    else
-      putchar(*text);
-
-    text ++;
-  }
+  if (!strcmp(text, "(c)"))
+    fputs("&copy;", stdout);
+  else if (!strcmp(text, "(r)"))
+    fputs("&reg;", stdout);
+  else if (!strcmp(text, "(tm)"))
+    fputs("&trade;", stdout);
+  else
+    write_html(text);
 
   if (element)
     printf("</%s>", element);
