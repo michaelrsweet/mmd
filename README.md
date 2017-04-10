@@ -34,7 +34,7 @@ HTML file called `testmmd.html`:
 
 ## Legal Stuff
 
-Copyright 2017 by Michael R Sweet.
+Copyright &copy; 2017 by Michael R Sweet.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

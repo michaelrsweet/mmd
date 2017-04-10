@@ -29,7 +29,7 @@
 
 CC	=	gcc
 CFLAGS	=	-g -Wall
-LIBS	=	-lz
+LIBS	=
 OBJS	=	testmmd.o mmd.o
 
 .SUFFIXES:	.c .o
@@ -44,6 +44,6 @@ clean:
 
 testmmd:	$(OBJS)
 	$(CC) $(CFLAGS) -o testmmd $(OBJS) $(LIBS)
-	./testmmd testmmd.md >testmmd.html
+	./testmmd DOCUMENTATION.md >DOCUMENTATION.html
 
 $(OBJS):	mmd.h

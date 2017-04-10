@@ -34,8 +34,560 @@
 #include "mmd.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#include <ctype.h>
 #include <string.h>
-#include <errno.h>
 
 
+/*
+ * Structures...
+ */
+
+struct _mmd_s
+{
+  mmd_type_t    type;                   /* Node type */
+  int           whitespace;             /* Leading whitespace? */
+  char          *text,                  /* Text */
+                *url;                   /* Reference URL (image/link/etc.) */
+  mmd_t         *parent,                /* Parent node */
+                *first_child,           /* First child node */
+                *last_child,            /* Last child node */
+                *prev_sibling,          /* Previous sibling node */
+                *next_sibling;          /* Next sibling node */
+};
+
+
+/*
+ * Local functions...
+ */
+
+
+static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
+static void     mmd_free(mmd_t *node);
+static void     mmd_parse_inline(mmd_t *parent, char *line);
+static void     mmd_remove(mmd_t *node);
+
+
+/*
+ * 'mmdFree()' - Free a markdown tree.
+ */
+
+void
+mmdFree(mmd_t *node)                    /* I - First node */
+{
+  mmd_t *current,		        /* Current node */
+	*next;			        /* Next node */
+
+
+  mmd_remove(node);
+
+  for (current = node->first_child; current; current = next)
+  {
+   /*
+    * Get the next node...
+    */
+
+    if ((next = current->first_child) != NULL)
+    {
+     /*
+      * Free parent nodes after child nodes have been freed...
+      */
+
+      current->first_child = NULL;
+      continue;
+    }
+
+    if ((next = current->next_sibling) == NULL)
+    {
+     /*
+      * Next node is the parent, which we'll free as needed...
+      */
+
+      if ((next = current->parent) == node)
+        next = NULL;
+    }
+
+   /*
+    * Free child...
+    */
+
+    mmd_free(current);
+  }
+
+ /*
+  * Then free the memory used by the parent node...
+  */
+
+  mmd_free(node);
+}
+
+
+/*
+ * 'mmdGetFirstChild()' - Return the first child of a node, if any.
+ */
+
+mmd_t *                                 /* O - First child or @code NULL@ if none */
+mmdGetFirstChild(mmd_t *node)           /* I - Node */
+{
+  return (node ? node->first_child : NULL);
+}
+
+
+/*
+ * 'mmdGetLastChild()' - Return the last child of a node, if any.
+ */
+
+mmd_t *                                 /* O - Last child or @code NULL@ if none */
+mmdGetLastChild(mmd_t *node)            /* I - Node */
+{
+  return (node ? node->last_child : NULL);
+}
+
+
+/*
+ * 'mmdGetNextSibling()' - Return the next sibling of a node, if any.
+ */
+
+mmd_t *                                 /* O - Next sibling or @code NULL@ if none */
+mmdGetNextSibling(mmd_t *node)          /* I - Node */
+{
+  return (node ? node->next_sibling : NULL);
+}
+
+
+/*
+ * 'mmdGetParent()' - Return the parent of a node, if any.
+ */
+
+mmd_t *                                 /* O - Parent node or @code NULL@ if none */
+mmdGetParent(mmd_t *node)               /* I - Node */
+{
+  return (node ? node->parent : NULL);
+}
+
+
+/*
+ * 'mmdGetPrevSibling()' - Return the previous sibling of a node, if any.
+ */
+
+mmd_t *                                 /* O - Previous sibling or @code NULL@ if none */
+mmdGetPrevSibling(mmd_t *node)          /* I - Node */
+{
+  return (node ? node->prev_sibling : NULL);
+}
+
+
+/*
+ * 'mmdGetText()' - Return the text associated with a node, if any.
+ */
+
+const char *                            /* O - Text or @code NULL@ if none */
+mmdGetText(mmd_t *node)                 /* I - Node */
+{
+  return (node ? node->text : NULL);
+}
+
+
+/*
+ * 'mmdGetType()' - Return the type of a node, if any.
+ */
+
+mmd_type_t                              /* O - Type or @code MMD_TYPE_NONE@ if none */
+mmdGetType(mmd_t *node)                 /* I - Node */
+{
+  return (node ? node->type : MMD_TYPE_NONE);
+}
+
+
+/*
+ * 'mmdGetURL()' - Return the URL associated with a node, if any.
+ */
+
+const char *                            /* O - URL or @code NULL@ if none */
+mmdGetURL(mmd_t *node)                  /* I - Node */
+{
+  return (node ? node->url : NULL);
+}
+
+
+/*
+ * 'mmdGetWhitespace()' - Return whether whitespace preceded a node.
+ */
+
+int                                     /* O - 1 for whitespace, 0 for none */
+mmdGetWhitespace(mmd_t *node)           /* I - Node */
+{
+  return (node ? node->whitespace : 0);
+}
+
+
+/*
+ * 'mmdIsBlock()' - Return whether the node is a block.
+ */
+
+int                                     /* O - 1 for block nodes, 0 otherwise */
+mmdIsBlock(mmd_t *node)                 /* I - Node */
+{
+  return (node ? node->type < MMD_TYPE_NORMAL_TEXT : 0);
+}
+
+
+/*
+ * 'mmdLoad()' - Load a markdown file into nodes.
+ */
+
+mmd_t *                                 /* O - First node in markdown */
+mmdLoad(const char *filename)           /* I - File to load */
+{
+  FILE          *fp;                    /* File */
+  mmd_t         *doc,                   /* Document */
+                *current,               /* Current parent block */
+                *block = NULL;          /* Current block */
+  mmd_type_t    type;                   /* Type for line */
+  char          line[65536],            /* Line from file */
+                *lineptr;               /* Pointer into line */
+
+
+ /*
+  * Open the file and create an empty document...
+  */
+
+  if ((fp = fopen(filename, "r")) == NULL)
+    return (NULL);
+
+  doc = current = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
+
+ /*
+  * Read lines until end-of-file...
+  */
+
+  while (fgets(line, sizeof(line), fp))
+  {
+    lineptr = line;
+
+    while (isspace(*lineptr & 255))
+      lineptr ++;
+
+    if ((lineptr - line) >= 4)
+    {
+     /*
+      * Indented code block.
+      */
+
+      if (current == doc || current->type != MMD_TYPE_CODE_BLOCK)
+        current = mmd_add(doc, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+
+      mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line + 4, NULL);
+      continue;
+    }
+
+    if (*lineptr == '>')
+    {
+     /*
+      * Block quote.  See if the parent of the current node is already a block
+      * quote...
+      */
+
+      if (current == doc || current->type != MMD_TYPE_BLOCK_QUOTE)
+        current = mmd_add(doc, MMD_TYPE_BLOCK_QUOTE, 0, NULL, NULL);
+
+     /*
+      * Skip whitespace after the ">"...
+      */
+
+      lineptr ++;
+      while (isspace(*lineptr & 255))
+        lineptr ++;
+    }
+
+    if (!*lineptr)
+    {
+      block   = NULL;
+      current = doc;
+
+      continue;
+    }
+
+    if (*lineptr == '-' && isspace(lineptr[1] & 255))
+    {
+     /*
+      * Bulleted list...
+      */
+
+      lineptr += 2;
+      while (isspace(*lineptr & 255))
+        lineptr ++;
+
+      if (current == doc || current->type != MMD_TYPE_ORDERED_LIST)
+        current = mmd_add(current, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
+
+      type = MMD_TYPE_LIST_ITEM;
+    }
+    else if (isdigit(*lineptr & 255))
+    {
+     /*
+      * Ordered list?
+      */
+
+      char *temp = lineptr + 1;
+
+      while (isdigit(*temp & 255))
+        temp ++;
+
+      if (*temp == '.' && isspace(temp[1] & 255))
+      {
+       /*
+        * Yes, ordered list.
+        */
+
+        lineptr = temp + 2;
+        while (isspace(*lineptr & 255))
+          lineptr ++;
+
+        if (current == doc || current->type != MMD_TYPE_ORDERED_LIST)
+          current = mmd_add(current, MMD_TYPE_ORDERED_LIST, 0, NULL, NULL);
+
+        type  = MMD_TYPE_LIST_ITEM;
+        block = NULL;
+      }
+      else
+      {
+       /*
+        * No, just a regular paragraph...
+        */
+
+        type = block ? block->type : MMD_TYPE_PARAGRAPH;
+      }
+    }
+    else if (*lineptr == '#')
+    {
+     /*
+      * Heading, count the number of '#' for the heading level...
+      */
+
+      char *temp = lineptr + 1;
+
+      while (*temp == '#')
+        temp ++;
+
+      type = MMD_TYPE_HEADING_1 + (temp - lineptr);
+
+     /*
+      * Skip whitespace after "#"...
+      */
+
+      lineptr = temp;
+      while (isspace(*lineptr & 255))
+        lineptr ++;
+
+     /*
+      * Strip trailing "#" characters...
+      */
+
+      for (temp = lineptr + strlen(lineptr) - 1; temp > lineptr && *temp == '#'; temp --)
+        *temp = '\0';
+    }
+    else
+      type = block ? block->type : MMD_TYPE_PARAGRAPH;
+
+    if (!block || block->type != type)
+      block = mmd_add(current, type, 0, NULL, NULL);
+
+    mmd_parse_inline(block, lineptr);
+  }
+
+  fclose(fp);
+
+  return (doc);
+}
+
+
+/*
+ * 'mmd_add()' - Add a new markdown node.
+ */
+
+static mmd_t *                          /* O - New node */
+mmd_add(mmd_t      *parent,             /* I - Parent node */
+        mmd_type_t type,                /* I - Node type */
+        int        whitespace,          /* I - 1 if whitespace precedes this node */
+        char       *text,               /* I - Text, if any */
+        char       *url)                /* I - URL, if any */
+{
+  mmd_t         *temp;                  /* New node */
+
+
+  if ((temp = calloc(1, sizeof(mmd_t))) != NULL)
+  {
+    if (parent)
+    {
+     /*
+      * Add node to the parent...
+      */
+
+      temp->parent = parent;
+
+      if (parent->last_child)
+      {
+        parent->last_child->next_sibling = temp;
+        temp->prev_sibling               = parent->last_child;
+        parent->last_child               = temp;
+      }
+      else
+      {
+        parent->first_child = parent->last_child = temp;
+      }
+    }
+
+   /*
+    * Copy the node values...
+    */
+
+    temp->type       = type;
+    temp->whitespace = whitespace;
+
+    if (text)
+      temp->text = strdup(text);
+
+    if (url)
+      temp->url = strdup(url);
+  }
+
+  return (temp);
+}
+
+
+/*
+ * 'mmd_free()' - Free memory used by a node.
+ */
+
+static void
+mmd_free(mmd_t *node)                   /* I - Node */
+{
+  if (node->text)
+    free(node->text);
+
+  if (node->url)
+    free(node->url);
+
+  free(node);
+}
+
+
+/*
+ * 'mmd_parse_inline()' - Parse inline formatting.
+ */
+
+static void
+mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
+                 char  *line)           /* I - Line from file */
+{
+  mmd_type_t    type;                   /* Current node type */
+  int           whitespace;             /* Whitespace precedes? */
+  char          *lineptr,               /* Pointer into line */
+                *text;                  /* Text fragment in line */
+//                *link;                  /* Link in line */
+
+
+  whitespace = parent->last_child != NULL;
+
+  for (lineptr = line, text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
+  {
+    if (isspace(*lineptr & 255))
+    {
+      if (text)
+      {
+        *lineptr = '\0';
+        mmd_add(parent, type, whitespace, text, NULL);
+        text = NULL;
+      }
+
+      whitespace = 1;
+    }
+    else if (!text)
+    {
+      if (*lineptr == '\\' && lineptr[1])
+      {
+        lineptr ++;
+        text = lineptr;
+      }
+      else if (*lineptr == '`')
+      {
+        type = MMD_TYPE_CODE_TEXT;
+        text = lineptr + 1;
+        lineptr ++;
+      }
+      else if (*lineptr == '*')
+      {
+        if (lineptr[1] == '*' && !isspace(lineptr[2] & 255))
+        {
+          type    = MMD_TYPE_STRONG_TEXT;
+          lineptr += 2;
+        }
+        else if (!isspace(lineptr[1] & 255))
+        {
+          type = MMD_TYPE_EMPHASIZED_TEXT;
+          lineptr ++;
+        }
+        else
+          type = MMD_TYPE_NORMAL_TEXT;
+      }
+      else
+        type = MMD_TYPE_NORMAL_TEXT;
+
+      if (!*lineptr)
+        break;
+
+      text = lineptr;
+    }
+    else if (*lineptr == '*' && type != MMD_TYPE_NORMAL_TEXT)
+    {
+      *lineptr = '\0';
+      if (lineptr[1] == '*')
+      {
+        lineptr ++;
+        *lineptr = '\0';
+      }
+
+      mmd_add(parent, type, whitespace, text, NULL);
+
+      text       = NULL;
+      whitespace = 0;
+    }
+    else if (*lineptr == '`' && type == MMD_TYPE_CODE_TEXT)
+    {
+      *lineptr = '\0';
+      mmd_add(parent, type, whitespace, text, NULL);
+
+      text       = NULL;
+      whitespace = 0;
+    }
+  }
+
+  if (text)
+    mmd_add(parent, type, whitespace, text, NULL);
+}
+
+
+/*
+ * 'mmd_remove()' - Remove a node from its parent.
+ */
+
+static void
+mmd_remove(mmd_t *node)                 /* I - Node */
+{
+  if (node->parent)
+  {
+    if (node->prev_sibling)
+      node->prev_sibling->next_sibling = node->next_sibling;
+    else
+      node->parent->first_child = node->next_sibling;
+
+    if (node->next_sibling)
+      node->next_sibling->prev_sibling = node->prev_sibling;
+    else
+      node->parent->last_child = node->prev_sibling;
+
+    node->parent       = NULL;
+    node->prev_sibling = NULL;
+    node->next_sibling = NULL;
+  }
+}
