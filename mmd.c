@@ -468,7 +468,8 @@ mmdLoad(const char *filename)           /* I - File to load */
       else if (current->type != MMD_TYPE_UNORDERED_LIST)
         current = mmd_add(current, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
 
-      type = MMD_TYPE_LIST_ITEM;
+      type  = MMD_TYPE_LIST_ITEM;
+      block = NULL;
     }
     else if (isdigit(*lineptr & 255))
     {
@@ -525,7 +526,8 @@ mmdLoad(const char *filename)           /* I - File to load */
         * Heading 1-6...
         */
 
-        type = MMD_TYPE_HEADING_1 + (temp - lineptr - 1);
+        type  = MMD_TYPE_HEADING_1 + (temp - lineptr - 1);
+        block = NULL;
 
        /*
         * Skip whitespace after "#"...
