@@ -284,6 +284,7 @@ mmdLoad(const char *filename)           /* I - File to load */
   char          line[65536],            /* Line from file */
                 *lineptr,               /* Pointer into line */
                 *lineend;               /* End of line */
+  int           blank_code = 0;         /* Saved indented blank code line */
 
 
  /*
@@ -315,7 +316,12 @@ mmdLoad(const char *filename)           /* I - File to load */
       if (current == doc)
         current = mmd_add(doc, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
 
+      if (blank_code)
+        mmd_add(current, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+
       mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line + 4, NULL);
+
+      blank_code = 0;
       continue;
     }
     else if (*lineptr == '`' && (!lineptr[1] || lineptr[1] == '`'))
@@ -409,10 +415,8 @@ mmdLoad(const char *filename)           /* I - File to load */
 
     if (!*lineptr)
     {
-      if (current->type == MMD_TYPE_CODE_BLOCK)
-        mmd_add(current, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
-
-      block = NULL;
+      blank_code = current->type == MMD_TYPE_CODE_BLOCK;
+      block      = NULL;
       continue;
     }
     else if (!strcmp(lineptr, "+"))
@@ -557,9 +561,13 @@ mmdLoad(const char *filename)           /* I - File to load */
     else
       type = block->type;
 
-
     if (!block || block->type != type)
+    {
+      if (current->type == MMD_TYPE_CODE_BLOCK)
+        current = doc;
+
       block = mmd_add(current, type, 0, NULL, NULL);
+    }
 
     mmd_parse_inline(block, lineptr);
   }
