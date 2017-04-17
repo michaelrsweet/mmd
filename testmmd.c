@@ -220,7 +220,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
   if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
   {
    /*
-    * Add an anchor...
+    * Add an anchor for each heading...
     */
 
     printf("    <%s><a id=\"", element);
