@@ -90,6 +90,9 @@ main(int  argc,				/* I - Number of command-line arguments */
   puts("  font-size: 18px;");
   puts("  line-height: 150%;");
   puts("}");
+  puts("a {");
+  puts("  font: inherit;");
+  puts("}");
   puts("pre, li code, p code {");
   puts("  background: #f8f8f8;");
   puts("  border: solid thin #666;");
@@ -307,7 +310,7 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
         break;
 
     case MMD_TYPE_LINKED_TEXT :
-        element = "a";
+        element = NULL;
         break;
 
     case MMD_TYPE_CODE_TEXT :
@@ -345,7 +348,8 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
     else
       printf("<a href=\"%s\">", url);
   }
-  else if (element)
+
+  if (element)
     printf("<%s>", element);
 
   if (!strcmp(text, "(c)"))
@@ -359,4 +363,7 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
 
   if (element)
     printf("</%s>", element);
+
+  if (url)
+    fputs("</a>", stdout);
 }

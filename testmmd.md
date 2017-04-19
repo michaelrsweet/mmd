@@ -84,6 +84,8 @@ Link to [mmd web site](https://michaelrsweet.github.io/mmd).
 
 Link to [Heading 1](@).
 
+Link to [`Heading 2`](@).
+
 Autolink to <https://michaelrsweet.github.io/mmd>.
 
 Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)

@@ -42,7 +42,7 @@ all:	testmmd
 clean:
 	rm -f testmmd $(OBJS)
 
-testmmd:	$(OBJS)
+testmmd:	$(OBJS) testmmd.md
 	$(CC) $(CFLAGS) -o testmmd $(OBJS) $(LIBS)
 	./testmmd testmmd.md >testmmd.html
 
