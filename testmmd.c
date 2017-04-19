@@ -49,7 +49,7 @@
 static const char *make_anchor(const char *text);
 static void       write_block(mmd_t *parent);
 static void       write_html(const char *s);
-static void       write_inline(mmd_t *node);
+static void       write_leaf(mmd_t *node);
 
 
 /*
@@ -236,7 +236,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
     if (mmdIsBlock(node))
       write_block(node);
     else
-      write_inline(node);
+      write_leaf(node);
   }
 
   if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
@@ -275,11 +275,11 @@ write_html(const char *text)            /* I - Text string */
 
 
 /*
- * 'write_inline()' - Write an inline node as HTML.
+ * 'write_leaf()' - Write an leaf node as HTML.
  */
 
 static void
-write_inline(mmd_t *node)               /* I - Inline node */
+write_leaf(mmd_t *node)                 /* I - Leaf node */
 {
   const char    *element,               /* Encoding element, if any */
                 *text,                  /* Text to write */
