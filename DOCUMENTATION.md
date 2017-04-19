@@ -9,13 +9,13 @@ copyright: Copyright © 2017 by Michael R Sweet
 ## Overview
 
 `mmd` represents a markdown document as a tree of nodes, each of type `mmd_t`.
-The [`mmdLoad`](@) function loads a document on disk into memory and returns the
-root node of the document:
+The `mmdLoad` function loads a document on disk into memory and returns the root
+node of the document:
 
     mmd_t *doc = mmdLoad("filename.md");
 
-Each node has an associated type that can be retrieved using the
-[`mmdGetType`](@) function.  The value is represented as an enumeration:
+Each node has an associated type that can be retrieved using the `mmdGetType`
+function.  The value is represented as an enumeration:
 
 - `MMD_TYPE_DOCUMENT`; The root node of a document.
 - `MMD_TYPE_METADATA`; The document metadata; child nodes are only of type
@@ -55,12 +55,12 @@ Each node has an associated type that can be retrieved using the
 
 Generally there are two categories of nodes: "block" nodes which contain other
 nodes and "leaf" nodes that contain text fragments, links, images, and breaks.
-The [`mmdIsBlock`](@) function provides a quick test whether a given node is a
+The `mmdIsBlock` function provides a quick test whether a given node is a
 block or leaf node.
 
-The [`mmdGetText`](@) function retrieves the text fragment associated with the
-node.  The [`mmdGetWhitespace`](@) function reports whether there was leading
-whitespace before the text fragment or image.  And the [`mmdGetURL`](@) function
+The `mmdGetText` function retrieves the text fragment associated with the
+node.  The `mmdGetWhitespace` function reports whether there was leading
+whitespace before the text fragment or image.  And the `mmdGetURL` function
 retrieves the URL associated with a `MMD_TYPE_LINKED_TEXT` or `MMD_TYPE_IMAGE`
 node.
 
@@ -80,10 +80,9 @@ following shows a typical markdown document tree:
                                                           "It" "so" ...
 
 Except for the document root node, each node has a parent which can be accessed
-using the [`mmdGetParent`](@) function.  Child nodes are accessed using the
-[`mmdGetFirstChild`](@) and [`mmdGetLastChild`](@) functions.  Sibling nodes are
-accessed using the [`mmdGetPrevSibling`](@) and [`mmdGetNextSibling`](@)
-functions:
+using the `mmdGetParent` function.  Child nodes are accessed using the
+`mmdGetFirstChild` and `mmdGetLastChild` functions.  Sibling nodes are accessed
+using the `mmdGetPrevSibling` and `mmdGetNextSibling` functions:
 
     mmd_t *node;
 
@@ -96,8 +95,8 @@ functions:
 
 ## Retrieving Document Metadata
 
-The [`mmdGetMetadata`](@) function retrieves the metadata associated with a
-given keyword.  For example, the following code will retrieve the title of the
+The `mmdGetMetadata` function retrieves the metadata associated with a given
+keyword.  For example, the following code will retrieve the title of the
 document:
 
     mmd_t *doc; /* previously loaded document */
@@ -107,7 +106,7 @@ document:
 
 ## Freeing Memory
 
-The [`mmdFree`](@) function frees the memory used for the document tree:
+The `mmdFree` function frees the memory used for the document tree:
 
     mmd_t *doc; /* previously loaded document */
 
