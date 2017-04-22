@@ -296,6 +296,12 @@ mmdLoad(const char *filename)           /* I - File to load */
 
   doc = current = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
 
+  if (!doc)
+  {
+    fclose(fp);
+    return (NULL);
+  }
+
  /*
   * Read lines until end-of-file...
   */
