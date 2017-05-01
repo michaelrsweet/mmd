@@ -93,3 +93,11 @@ Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)
 *Emphasized Text*
 
 **Bold Text**
+
+\(Escaped Parenthesis)
+
+\(*Emphasized Parenthesis*)
+
+\(**Boldface Parenthesis**)
+
+\(`Code Parenthesis`)
