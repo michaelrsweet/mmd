@@ -90,9 +90,8 @@ Autolink to <https://michaelrsweet.github.io/mmd>.
 
 Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)
 
-*Emphasized Text*
-
-**Bold Text**
+This sentence contains *Emphasized Text*, **Bold Text**, and `Code Text` for
+testing the MMD parser.  The `<mmd.h>` header file.
 
 \(Escaped Parenthesis)
 
