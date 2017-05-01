@@ -54,6 +54,17 @@ HTML file called `testmmd.html`:
     make
 
 
+## Changes In v1.1
+
+The following changes were made for v1.1:
+
+- The `mmd.h` header now includes the C++ `extern "C"` wrapper around the C
+  function prototypes.
+- Added a `mmdLoadFile` function that loads a markdown document from a `FILE`
+  pointer.
+- Fixed a parsing bug for emphasized, bold, and code text containing whitespace.
+
+
 ## Legal Stuff
 
 Copyright (c) 2017 by Michael R Sweet.
