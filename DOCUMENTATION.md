@@ -17,41 +17,41 @@ node of the document:
 Each node has an associated type that can be retrieved using the `mmdGetType`
 function.  The value is represented as an enumeration:
 
-- `MMD_TYPE_DOCUMENT`; The root node of a document.
-- `MMD_TYPE_METADATA`; The document metadata; child nodes are only of type
+- `MMD_TYPE_DOCUMENT` - The root node of a document.
+- `MMD_TYPE_METADATA` - The document metadata; child nodes are only of type
   `MMD_TYPE_METADATA_TEXT`.
-- `MMD_TYPE_METADATA_TEXT`; Document metadata text items; text is of the form
+- `MMD_TYPE_METADATA_TEXT` - Document metadata text items; text is of the form
   "keyword: value".
-- `MMD_TYPE_BLOCK_QUOTE`; A collection of quoted blocks.
-- `MMD_TYPE_ORDERED_LIST`; An ordered (numbered) list; child nodes are only of
+- `MMD_TYPE_BLOCK_QUOTE` - A collection of quoted blocks.
+- `MMD_TYPE_ORDERED_LIST` - An ordered (numbered) list; child nodes are only of
   type `MMD_TYPE_LIST_ITEM`.
-- `MMD_TYPE_UNORDERED_LIST`; An unordered (bulleted) list; child nodes are only
+- `MMD_TYPE_UNORDERED_LIST` - An unordered (bulleted) list; child nodes are only
   of type `MMD_TYPE_LIST_ITEM`.
-- `MMD_TYPE_LIST_ITEM`; A list item; child nodes can be text or other blocks.
-- `MMD_TYPE_HEADING_1`; A level 1 heading; child nodes are text or images.
-- `MMD_TYPE_HEADING_2`; A level 2 heading; child nodes are text or images.
-- `MMD_TYPE_HEADING_3`; A level 3 heading; child nodes are text or images.
-- `MMD_TYPE_HEADING_4`; A level 4 heading; child nodes are text or images.
-- `MMD_TYPE_HEADING_5`; A level 5 heading; child nodes are text or images.
-- `MMD_TYPE_HEADING_6`; A level 6 heading; child nodes are text or images.
-- `MMD_TYPE_PARAGRAPH`; A paragraph; child nodes are text or images.
-- `MMD_TYPE_CODE_BLOCK`; A block of preformatted, monospaced text; child nodes
+- `MMD_TYPE_LIST_ITEM` - A list item; child nodes can be text or other blocks.
+- `MMD_TYPE_HEADING_1` - A level 1 heading; child nodes are text or images.
+- `MMD_TYPE_HEADING_2` - A level 2 heading; child nodes are text or images.
+- `MMD_TYPE_HEADING_3` - A level 3 heading; child nodes are text or images.
+- `MMD_TYPE_HEADING_4` - A level 4 heading; child nodes are text or images.
+- `MMD_TYPE_HEADING_5` - A level 5 heading; child nodes are text or images.
+- `MMD_TYPE_HEADING_6` - A level 6 heading; child nodes are text or images.
+- `MMD_TYPE_PARAGRAPH` - A paragraph; child nodes are text or images.
+- `MMD_TYPE_CODE_BLOCK` - A block of preformatted, monospaced text; child nodes
   are only of type `MMD_TYPE_CODE_TEXT`.
-- `MMD_TYPE_THEMATIC_BREAK`; A horizontal rule or page break.
-- `MMD_TYPE_NORMAL_TEXT`; A text fragment with no special formatting.
-- `MMD_TYPE_EMPHASIZED_TEXT`;  A text fragment with emphasized formatting,
+- `MMD_TYPE_THEMATIC_BREAK` - A horizontal rule or page break.
+- `MMD_TYPE_NORMAL_TEXT` - A text fragment with no special formatting.
+- `MMD_TYPE_EMPHASIZED_TEXT` -  A text fragment with emphasized formatting,
   typically italics.
-- `MMD_TYPE_STRONG_TEXT`; A text fragment with strong formatting, typically
+- `MMD_TYPE_STRONG_TEXT` - A text fragment with strong formatting, typically
   boldface.
-- `MMD_TYPE_STRUCK_TEXT`; A text fragment that is presented with a line through
+- `MMD_TYPE_STRUCK_TEXT` - A text fragment that is presented with a line through
   it.
-- `MMD_TYPE_LINKED_TEXT`; A text fragment that links to a heading within the
+- `MMD_TYPE_LINKED_TEXT` - A text fragment that links to a heading within the
   document or an external resource.
-- `MMD_TYPE_CODE_TEXT`; A text fragment that contains preformatted, monospaced
+- `MMD_TYPE_CODE_TEXT` - A text fragment that contains preformatted, monospaced
   text.
-- `MMD_TYPE_IMAGE`; An inline image.
-- `MMD_TYPE_HARD_BREAK`; A hard line break.
-- `MMD_TYPE_SOFT_BREAK`; A soft line/word break.
+- `MMD_TYPE_IMAGE` - An inline image.
+- `MMD_TYPE_HARD_BREAK` - A hard line break.
+- `MMD_TYPE_SOFT_BREAK` - A soft line/word break.
 
 Generally there are two categories of nodes: "block" nodes which contain other
 nodes and "leaf" nodes that contain text fragments, links, images, and breaks.
@@ -126,10 +126,10 @@ breaks.  Generally speaking, the function writes an open tag for the block,
 iterates through the node's children, and then writes a close tag for the block.
 There are two exceptions:
 
-1. `MMD_TYPE_CODE_BLOCK`: Child nodes are code text (`MMD_TYPE_CODE_TEXT`) that
+1. `MMD_TYPE_CODE_BLOCK` - Child nodes are code text (`MMD_TYPE_CODE_TEXT`) that
    contain all whitespace and newlines that should be written directly.
-2. `MMD_TYPE_THEMATIC_BREAK`: There are no child nodes, so a horizontal rule tag
-   (`<hr>`) is written.
+2. `MMD_TYPE_THEMATIC_BREAK` - There are no child nodes, so a horizontal rule
+   tag (`<hr>`) is written.
 
 This function also generates anchors for each heading so that internal
 references ("@" links) work.
@@ -242,10 +242,10 @@ elements.  Generally speaking, the function writes the text for the node
 surrounded by open and close tags.  If whitespace preceded the node, it writes
 a space before the text.  There are three exceptions:
 
-1. `MMD_TYPE_IMAGE`: An `<img>` tag is written using the URL as the source and
+1. `MMD_TYPE_IMAGE` - An `<img>` tag is written using the URL as the source and
    the text as the alternate value.
-2. `MMD_TYPE_HARD_BREAK`: A `<br>` tag is written.
-3. `MMD_TYPE_SOFT_BREAK`: A `<wbr>` tag is written.
+2. `MMD_TYPE_HARD_BREAK` - A `<br>` tag is written.
+3. `MMD_TYPE_SOFT_BREAK` - A `<wbr>` tag is written.
 
 In addition, some simple text substitutions are performed for "(c)", "(r)", and
 "(tm)" to use the corresponding HTML entities for copyright, registered
@@ -562,3 +562,16 @@ function understands the CommonMark syntax and Jekyll metadata.
 The return value is a pointer to the root document node on success or `NULL` on
 failure.  Due to the nature of Markdown, the only failures are file open errors
 and out-of-memory conditions.
+
+
+## mmdLoadFile
+
+    mmd_t *
+    mmdLoadFile(FILE *fp);
+
+The `mmdLoadFile` function loads a Markdown document from the specified `FILE`
+pointer.  The function understands the CommonMark syntax and Jekyll metadata.
+
+The return value is a pointer to the root document node on success or `NULL` on
+failure.  Due to the nature of Markdown, the only failures are out-of-memory
+conditions.
