@@ -137,7 +137,9 @@ make_anchor(const char *text)           /* I - Text */
   for (bufptr = buffer; *text && bufptr < (buffer + sizeof(buffer) - 1); text ++)
   {
     if ((*text >= '0' && *text <= '9') || (*text >= 'a' && *text <= 'z') || (*text >= 'A' && *text <= 'Z') || *text == '.' || *text == '-')
-      *bufptr++ = *text;
+      *bufptr++ = tolower(*text);
+    else if (*text == ' ')
+      *bufptr++ = '-';
   }
 
   *bufptr = '\0';
@@ -147,7 +149,7 @@ make_anchor(const char *text)           /* I - Text */
 
 
 /*
- * 'write_block()' - Write a block as HTML.
+ * 'write_block()' - Write a block node as HTML.
  */
 
 static void
@@ -228,7 +230,12 @@ write_block(mmd_t *parent)              /* I - Parent node */
 
     printf("    <%s><a id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
+    {
+      if (mmdGetWhitespace(node))
+        fputc('-', stdout);
+
       fputs(make_anchor(mmdGetText(node)), stdout);
+    }
     fputs("\">", stdout);
   }
   else if (element)
@@ -278,7 +285,7 @@ write_html(const char *text)            /* I - Text string */
 
 
 /*
- * 'write_leaf()' - Write an leaf node as HTML.
+ * 'write_leaf()' - Write a leaf node as HTML.
  */
 
 static void
