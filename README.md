@@ -65,6 +65,7 @@ The following changes were made for v1.1:
 - Fixed a parsing bug for emphasized, bold, and code text containing whitespace.
 - Fixed a parsing bug for escaped characters followed by unescaped formatting
   sequences.
+- Fixed a parsing bug for headings that follow a list.
 
 
 ## Legal Stuff
