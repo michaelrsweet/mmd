@@ -1,3 +1,5 @@
 *.html
 *.o
+commonmark.md
+mmd-160.png
 testmmd
