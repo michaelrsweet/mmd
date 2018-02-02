@@ -62,7 +62,7 @@ HTML file called `testmmd.html`:
 The following changes were made for v1.2:
 
 - Changed license to Apache License Version 2.0
-- (in progress) Added support for markdown tables (Issue #3)
+- Added support for markdown tables (Issue #3)
 
 
 ## Changes In v1.1
