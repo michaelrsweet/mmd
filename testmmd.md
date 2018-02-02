@@ -100,3 +100,43 @@ testing the MMD parser.  The `<mmd.h>` header file.
 \(**Boldface Parenthesis**)
 
 \(`Code Parenthesis`)
+
+Tables as code:
+
+    | Heading 1 | Heading 2 | Heading 3 |
+    | --------- | --------- | --------- |
+    | Cell 1,1  | Cell 1,2  | Cell 1,3  |
+    | Cell 2,1  | Cell 2,2  | Cell 2,3  |
+    | Cell 3,1  | Cell 3,2  | Cell 3,3  |
+
+Table with leading/trailing pipes:
+
+| Heading 1 | Heading 2 | Heading 3 |
+| --------- | --------- | --------- |
+| Cell 1,1  | Cell 1,2  | Cell 1,3  |
+| Cell 2,1  | Cell 2,2  | Cell 2,3  |
+| Cell 3,1  | Cell 3,2  | Cell 3,3  |
+
+Table without leading/trailing pipes:
+
+Heading 1 | Heading 2 | Heading 3
+--------- | --------- | ---------
+Cell 1,1  | Cell 1,2  | Cell 1,3
+Cell 2,1  | Cell 2,2  | Cell 2,3
+Cell 3,1  | Cell 3,2  | Cell 3,3
+
+Table with alignment:
+
+Left      |   Center  |    Right
++-------- | +-------+ | --------+
+Cell 1,1  | Cell 1,2  |        1
+Cell 2,1  | Cell 2,2  |       12
+Cell 3,1  | Cell 3,2  |      123
+
+Table in block quote:
+
+> Heading 1 | Heading 2 | Heading 3
+> --------- | --------- | ---------
+> Cell 1,1  | Cell 1,2  | Cell 1,3
+> Cell 2,1  | Cell 2,2  | Cell 2,3
+> Cell 3,1  | Cell 3,2  | Cell 3,3
