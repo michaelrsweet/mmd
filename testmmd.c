@@ -76,15 +76,13 @@ main(int  argc,				/* I - Number of command-line arguments */
   puts("  font: inherit;");
   puts("}");
   puts("pre, li code, p code {");
-  puts("  background: #f8f8f8;");
-  puts("  border: solid thin #666;");
   puts("  font-family: monospace;");
   puts("  font-size: 14px;");
   puts("}");
   puts("pre {");
+  puts("  background: #f8f8f8;");
+  puts("  border: solid thin #666;");
   puts("  line-height: 120%;");
-  puts("  margin-left: 1em;");
-  puts("  margin-right: 1em;");
   puts("  padding: 10px;");
   puts("}");
   puts("li code, p code {");
@@ -226,39 +224,35 @@ write_block(mmd_t *parent)              /* I - Parent node */
         return;
 
     case MMD_TYPE_TABLE :
-        puts("    <table>");
-        for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
-          write_block(node);
-        puts("      </tbody>");
-        puts("    </table>");
-        return;
+        element = "table";
+        break;
 
-    case MMD_TYPE_TABLE_HEADER_ROW :
-        fputs("      <thead><tr>", stdout);
-        for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
-          write_block(node);
-        puts("</tr></thead>");
-        puts("      <tbody>");
-        return;
+    case MMD_TYPE_TABLE_HEADER :
+        element = "thead";
+        break;
+
+    case MMD_TYPE_TABLE_BODY :
+	element = "tbody";
+        break;
+
+    case MMD_TYPE_TABLE_ROW :
+	element = "tr";
+        break;
 
     case MMD_TYPE_TABLE_HEADER_CELL :
         element = "th";
         break;
 
-    case MMD_TYPE_TABLE_BODY_ROW :
-	element = "tr";
-        break;
-
-    case MMD_TYPE_TABLE_BODY_CELL_LEFT :
+    case MMD_TYPE_TABLE_CELL_LEFT :
         element = "td";
         break;
 
-    case MMD_TYPE_TABLE_BODY_CELL_CENTER :
+    case MMD_TYPE_TABLE_CELL_CENTER :
         element = "td";
         hclass  = "center";
         break;
 
-    case MMD_TYPE_TABLE_BODY_CELL_RIGHT :
+    case MMD_TYPE_TABLE_CELL_RIGHT :
         element = "td";
         hclass  = "right";
         break;
@@ -274,7 +268,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
     * Add an anchor for each heading...
     */
 
-    printf("    <%s><a id=\"", element);
+    printf("    <%s id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
     {
       if (mmdGetWhitespace(node))
@@ -295,9 +289,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
       write_leaf(node);
   }
 
-  if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
-    printf("</a></%s>\n", element);
-  else if (element)
+  if (element)
     printf("</%s>\n", element);
 }
 

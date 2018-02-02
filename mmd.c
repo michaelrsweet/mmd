@@ -446,7 +446,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       int	col;			/* Current column */
       char	*start,			/* Start of column/cell */
 		*end;			/* End of column/cell */
-      mmd_t	*cell;			/* Current cell */
+      mmd_t	*row,			/* Current row */
+		*cell;			/* Current cell */
 
 //      fprintf(stderr, "TABLE current=%p (%d), rows=%d\n", current, current->type, rows);
 
@@ -458,17 +459,23 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 //        fprintf(stderr, "ADDING NEW TABLE to %p (%d)\n", current, current->type);
 
         current = mmd_add(current, MMD_TYPE_TABLE, 0, NULL, NULL);
-        block   = mmd_add(current, MMD_TYPE_TABLE_HEADER_ROW, 0, NULL, NULL);
+        block   = mmd_add(current, MMD_TYPE_TABLE_HEADER, 0, NULL, NULL);
 
         for (col = 0; col < (int)(sizeof(columns) / sizeof(columns[0])); col ++)
-          columns[col] = MMD_TYPE_TABLE_BODY_CELL_LEFT;
+          columns[col] = MMD_TYPE_TABLE_CELL_LEFT;
 
         rows = -1;
       }
       else if (rows > 0)
-        block = mmd_add(current, MMD_TYPE_TABLE_BODY_ROW, 0, NULL, NULL);
+      {
+        if (rows == 1)
+          block = mmd_add(current, MMD_TYPE_TABLE_BODY, 0, NULL, NULL);
+      }
       else
         block = NULL;
+
+      if (block)
+        row = mmd_add(block, MMD_TYPE_TABLE_ROW, 0, NULL, NULL);
 
       if (*lineptr == '|')
         lineptr ++;			/* Skip leading pipe */
@@ -492,10 +499,10 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
           * Add a cell to this row...
           */
 
-          if (block->type == MMD_TYPE_TABLE_HEADER_ROW)
-            cell = mmd_add(block, MMD_TYPE_TABLE_HEADER_CELL, 0, NULL, NULL);
+          if (block->type == MMD_TYPE_TABLE_HEADER)
+            cell = mmd_add(row, MMD_TYPE_TABLE_HEADER_CELL, 0, NULL, NULL);
           else
-            cell = mmd_add(block, columns[col], 0, NULL, NULL);
+            cell = mmd_add(row, columns[col], 0, NULL, NULL);
 
           mmd_parse_inline(cell, start);
         }
@@ -511,9 +518,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
           for (end = start + strlen(start) - 1; end > start && isspace(*end & 255); end --);
 
           if (*start == ':' && *end == ':')
-            columns[col] = MMD_TYPE_TABLE_BODY_CELL_CENTER;
+            columns[col] = MMD_TYPE_TABLE_CELL_CENTER;
           else if (*end == ':')
-            columns[col] = MMD_TYPE_TABLE_BODY_CELL_RIGHT;
+            columns[col] = MMD_TYPE_TABLE_CELL_RIGHT;
 
 //          fprintf(stderr, "COLUMN %d SEPARATOR=\"%s\", TYPE=%d\n", col, start, columns[col]);
         }
@@ -526,6 +533,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
     {
 //      fputs("END TABLE\n", stderr);
       current = current->parent;
+      block   = NULL;
     }
 
     if (!strcmp(lineptr, "+"))

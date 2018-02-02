@@ -4,6 +4,19 @@ author: Michael R Sweet
 copyright: Copyright © 2017 by Michael R Sweet
 ...
 
+# Contents
+
+[How to Use the mmd "Library"](@)
+- [Overview](@)
+- [Navigating the Document Tree](@)
+- [Retrieving Document Metadata](@)
+- [Freeing Memory](@)
+
+[Example: Generating HTML from Markdown](@)
+
+[Reference](@)
+
+
 # How to Use the mmd "Library"
 
 ## Overview
@@ -28,6 +41,10 @@ function.  The value is represented as an enumeration:
 - `MMD_TYPE_UNORDERED_LIST` - An unordered (bulleted) list; child nodes are only
   of type `MMD_TYPE_LIST_ITEM`.
 - `MMD_TYPE_LIST_ITEM` - A list item; child nodes can be text or other blocks.
+- `MMD_TYPE_TABLE` - A table.
+- `MMD_TYPE_TABLE_HEADER` - The table header.
+- `MMD_TYPE_TABLE_BODY` - The table body.
+- `MMD_TYPE_TABLE_ROW` - A table row.
 - `MMD_TYPE_HEADING_1` - A level 1 heading; child nodes are text or images.
 - `MMD_TYPE_HEADING_2` - A level 2 heading; child nodes are text or images.
 - `MMD_TYPE_HEADING_3` - A level 3 heading; child nodes are text or images.
@@ -38,6 +55,10 @@ function.  The value is represented as an enumeration:
 - `MMD_TYPE_CODE_BLOCK` - A block of preformatted, monospaced text; child nodes
   are only of type `MMD_TYPE_CODE_TEXT`.
 - `MMD_TYPE_THEMATIC_BREAK` - A horizontal rule or page break.
+- `MMD_TYPE_TABLE_HEADER_CELL` - A table header cell.
+- `MMD_TYPE_TABLE_CELL_LEFT` - A left-aligned table cell.
+- `MMD_TYPE_TABLE_CELL_CENTER` - A centered table cell.
+- `MMD_TYPE_TABLE_CELL_RIGHT` - A right-aligned table cell.
 - `MMD_TYPE_NORMAL_TEXT` - A text fragment with no special formatting.
 - `MMD_TYPE_EMPHASIZED_TEXT` -  A text fragment with emphasized formatting,
   typically italics.
@@ -117,7 +138,11 @@ The `mmdFree` function frees the memory used for the document tree:
 
 One of the most common uses for Markdown is for generating HTML, and the
 `testmmd` program included with `mmd` does exactly that using four functions:
-`write_block`, `write_leaf`, `write_html`, and `make_anchor`.
+
+- [write_block - Write Block Nodes](@)
+- [write_leaf - Write Leaf Nodes for a Block](@)
+- [write_html - Write Text and URL Values](@)
+- [make_anchor - Make a HTML Anchor String from Text](@)
 
 ## write_block - Write Block Nodes
 
@@ -201,6 +226,40 @@ Here is the complete function:
             puts("    <hr />");
             return;
 
+        case MMD_TYPE_TABLE :
+            element = "table";
+            break;
+
+        case MMD_TYPE_TABLE_HEADER :
+            element = "thead";
+            break;
+
+        case MMD_TYPE_TABLE_BODY :
+            element = "tbody";
+            break;
+
+        case MMD_TYPE_TABLE_ROW :
+            element = "tr";
+            break;
+
+        case MMD_TYPE_TABLE_HEADER_CELL :
+            element = "th";
+            break;
+
+        case MMD_TYPE_TABLE_CELL_LEFT :
+            element = "td";
+            break;
+
+        case MMD_TYPE_TABLE_CELL_CENTER :
+            element = "td";
+            hclass  = "center";
+            break;
+
+        case MMD_TYPE_TABLE_CELL_RIGHT :
+            element = "td";
+            hclass  = "right";
+            break;
+
         default :
             element = NULL;
             break;
@@ -212,13 +271,13 @@ Here is the complete function:
         * Add an anchor for each heading...
         */
 
-        printf("    <%s><a id=\"", element);
+        printf("    <%s id=\"", element);
         for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
           fputs(make_anchor(mmdGetText(node)), stdout);
         fputs("\">", stdout);
       }
       else if (element)
-        printf("    <%s>%s", element, type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
+        printf("    <%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
 
       for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
       {
@@ -228,9 +287,7 @@ Here is the complete function:
           write_inline(node);
       }
 
-      if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
-        printf("</a></%s>\n", element);
-      else if (element)
+      if (element)
         printf("</%s>\n", element);
     }
 
@@ -400,7 +457,24 @@ Here is the complete function:
 
 # Reference
 
-# mmd\_t
+- [mmd_t](@)
+- [mmd_type_t](@)
+- [mmdFree](@)
+- [mmdGetFirstChild](@)
+- [mmdGetLastChild](@)
+- [mmdGetMetadata](@)
+- [mmdGetNextSibling](@)
+- [mmdGetParent](@)
+- [mmdGetPrevSibling](@)
+- [mmdGetText](@)
+- [mmdGetType](@)
+- [mmdGetURL](@)
+- [mmdGetWhitespace](@)
+- [mmdIsBlock](@)
+- [mmdLoad](@)
+- [mmdLoadFile](@)
+
+## mmd\_t
 
     typedef struct _mmd_s mmd_t;
 
@@ -409,7 +483,7 @@ node has an associated type and may have text, link, siblings, children, and
 a parent.
 
 
-# mmd\_type\_t
+## mmd\_type\_t
 
     typedef enum mmd_type_e
     {
@@ -420,6 +494,10 @@ a parent.
       MMD_TYPE_ORDERED_LIST,
       MMD_TYPE_UNORDERED_LIST,
       MMD_TYPE_LIST_ITEM,
+      MMD_TYPE_TABLE,
+      MMD_TYPE_TABLE_HEADER,
+      MMD_TYPE_TABLE_BODY,
+      MMD_TYPE_TABLE_ROW,
       MMD_TYPE_HEADING_1,
       MMD_TYPE_HEADING_2,
       MMD_TYPE_HEADING_3,
@@ -429,6 +507,10 @@ a parent.
       MMD_TYPE_PARAGRAPH,
       MMD_TYPE_CODE_BLOCK,
       MMD_TYPE_THEMATIC_BREAK,
+      MMD_TYPE_TABLE_HEADER_CELL,
+      MMD_TYPE_TABLE_CELL_LEFT,
+      MMD_TYPE_TABLE_CELL_CENTER,
+      MMD_TYPE_TABLE_CELL_RIGHT,
       MMD_TYPE_NORMAL_TEXT,
       MMD_TYPE_EMPHASIZED_TEXT,
       MMD_TYPE_STRONG_TEXT,
