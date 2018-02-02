@@ -127,8 +127,8 @@ Cell 3,1  | Cell 3,2  | Cell 3,3
 
 Table with alignment:
 
-Left      |   Center  |    Right
-+-------- | +-------+ | --------+
+Left Alignment | Center Alignment | Right Alignment
+:-------- | :-------: | --------:
 Cell 1,1  | Cell 1,2  |        1
 Cell 2,1  | Cell 2,2  |       12
 Cell 3,1  | Cell 3,2  |      123
