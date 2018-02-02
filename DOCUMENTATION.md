@@ -56,9 +56,9 @@ function.  The value is represented as an enumeration:
   are only of type `MMD_TYPE_CODE_TEXT`.
 - `MMD_TYPE_THEMATIC_BREAK` - A horizontal rule or page break.
 - `MMD_TYPE_TABLE_HEADER_CELL` - A table header cell.
-- `MMD_TYPE_TABLE_CELL_LEFT` - A left-aligned table cell.
-- `MMD_TYPE_TABLE_CELL_CENTER` - A centered table cell.
-- `MMD_TYPE_TABLE_CELL_RIGHT` - A right-aligned table cell.
+- `MMD_TYPE_TABLE_BODY_CELL_LEFT` - A left-aligned table cell.
+- `MMD_TYPE_TABLE_BODY_CELL_CENTER` - A centered table cell.
+- `MMD_TYPE_TABLE_BODY_CELL_RIGHT` - A right-aligned table cell.
 - `MMD_TYPE_NORMAL_TEXT` - A text fragment with no special formatting.
 - `MMD_TYPE_EMPHASIZED_TEXT` -  A text fragment with emphasized formatting,
   typically italics.
@@ -246,16 +246,16 @@ Here is the complete function:
             element = "th";
             break;
 
-        case MMD_TYPE_TABLE_CELL_LEFT :
+        case MMD_TYPE_TABLE_BODY_CELL_LEFT :
             element = "td";
             break;
 
-        case MMD_TYPE_TABLE_CELL_CENTER :
+        case MMD_TYPE_TABLE_BODY_CELL_CENTER :
             element = "td";
             hclass  = "center";
             break;
 
-        case MMD_TYPE_TABLE_CELL_RIGHT :
+        case MMD_TYPE_TABLE_BODY_CELL_RIGHT :
             element = "td";
             hclass  = "right";
             break;
@@ -508,9 +508,9 @@ a parent.
       MMD_TYPE_CODE_BLOCK,
       MMD_TYPE_THEMATIC_BREAK,
       MMD_TYPE_TABLE_HEADER_CELL,
-      MMD_TYPE_TABLE_CELL_LEFT,
-      MMD_TYPE_TABLE_CELL_CENTER,
-      MMD_TYPE_TABLE_CELL_RIGHT,
+      MMD_TYPE_TABLE_BODY_CELL_LEFT,
+      MMD_TYPE_TABLE_BODY_CELL_CENTER,
+      MMD_TYPE_TABLE_BODY_CELL_RIGHT,
       MMD_TYPE_NORMAL_TEXT,
       MMD_TYPE_EMPHASIZED_TEXT,
       MMD_TYPE_STRONG_TEXT,

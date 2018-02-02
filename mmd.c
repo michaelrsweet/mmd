@@ -462,7 +462,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         block   = mmd_add(current, MMD_TYPE_TABLE_HEADER, 0, NULL, NULL);
 
         for (col = 0; col < (int)(sizeof(columns) / sizeof(columns[0])); col ++)
-          columns[col] = MMD_TYPE_TABLE_CELL_LEFT;
+          columns[col] = MMD_TYPE_TABLE_BODY_CELL_LEFT;
 
         rows = -1;
       }
@@ -518,9 +518,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
           for (end = start + strlen(start) - 1; end > start && isspace(*end & 255); end --);
 
           if (*start == ':' && *end == ':')
-            columns[col] = MMD_TYPE_TABLE_CELL_CENTER;
+            columns[col] = MMD_TYPE_TABLE_BODY_CELL_CENTER;
           else if (*end == ':')
-            columns[col] = MMD_TYPE_TABLE_CELL_RIGHT;
+            columns[col] = MMD_TYPE_TABLE_BODY_CELL_RIGHT;
 
 //          fprintf(stderr, "COLUMN %d SEPARATOR=\"%s\", TYPE=%d\n", col, start, columns[col]);
         }

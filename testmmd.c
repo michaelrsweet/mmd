@@ -243,16 +243,16 @@ write_block(mmd_t *parent)              /* I - Parent node */
         element = "th";
         break;
 
-    case MMD_TYPE_TABLE_CELL_LEFT :
+    case MMD_TYPE_TABLE_BODY_CELL_LEFT :
         element = "td";
         break;
 
-    case MMD_TYPE_TABLE_CELL_CENTER :
+    case MMD_TYPE_TABLE_BODY_CELL_CENTER :
         element = "td";
         hclass  = "center";
         break;
 
-    case MMD_TYPE_TABLE_CELL_RIGHT :
+    case MMD_TYPE_TABLE_BODY_CELL_RIGHT :
         element = "td";
         hclass  = "right";
         break;
