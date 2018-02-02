@@ -413,7 +413,11 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       * quote...
       */
 
-      if (current == doc || current->type != MMD_TYPE_BLOCK_QUOTE)
+      mmd_t *node;			/* Current node */
+
+      for (node = current; node != doc && node->type != MMD_TYPE_BLOCK_QUOTE; node = node->parent);
+
+      if (node == doc || node->type != MMD_TYPE_BLOCK_QUOTE)
         current = mmd_add(doc, MMD_TYPE_BLOCK_QUOTE, 0, NULL, NULL);
 
      /*
