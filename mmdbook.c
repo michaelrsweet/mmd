@@ -1,11 +1,11 @@
 /*
- * Unit test program for Mini Markdown library.
+ * Mini Markdown book maker.
  *
  *     https://github.com/michaelrsweet/mmd
  *
  * Usage:
  *
- *     ./testmmd filename.md
+ *     ./mmdbook [-o filename.html] filename.md [... filenameN.md]
  *
  * Copyright © 2017-2018 by Michael R Sweet.
  *
@@ -25,13 +25,27 @@
 
 
 /*
+ * Local types...
+ */
+
+typedef struct toc_s
+{
+  int	level;				/* Heading level */
+  char	*heading;			/* Heading text */
+} toc_t;
+
+
+/*
  * Local functions...
  */
 
-static const char *make_anchor(const char *text);
-static void       write_block(mmd_t *parent);
-static void       write_html(const char *s);
-static void       write_leaf(mmd_t *node);
+static const char	*make_anchor(const char *text);
+static int		scan_toc(mmd_t *parent, int num_toc, toc_t **toc);
+static void		write_block(FILE *outfp, mmd_t *parent);
+static void		write_head(FILE *outfp, const char *cssfile, const char *coverfile, const char *title, const char *copyright, const char *author, const char *version);
+static void		write_html(FILE *outfp, const char *s);
+static void		write_leaf(FILE *outfp, mmd_t *node);
+static void		write_toc(FILE *outfp, int num_toc, toc_t *toc);
 
 
 /*
@@ -42,8 +56,19 @@ int					/* O - Exit status */
 main(int  argc,				/* I - Number of command-line arguments */
      char *argv[])			/* I - Command-line arguments */
 {
-  mmd_t         *doc;                   /* Document */
-  const char    *title;                 /* Title */
+  FILE		*outfp;			/* Output file */
+  const char	*outfile = NULL,	/* Output filename */
+		*coverfile = NULL,	/* Cover image filename */
+		*cssfile = NULL,	/* CSS filename */
+		*title,                 /* Title */
+		*copyright,		/* Copyright */
+		*author,		/* Author */
+		*version;		/* Document version */
+  mmd_t         *front = NULL,		/* Cover page/frontmatter */
+		*files[100];		/* "Body" files */
+  int		num_files = 0,		/* Number of files */
+		num_toc = 0;		/* Number of table of contents entries */
+  toc_t		*toc = NULL;		/* Table of contents entries */
 
 
   if (argc != 2)
@@ -60,62 +85,6 @@ main(int  argc,				/* I - Number of command-line arguments */
 
   title = mmdGetMetadata(doc, "title");
 
-  puts("<!DOCTYPE html>");
-  puts("<html>");
-  puts("  <head>");
-  fputs("    <title>", stdout);
-  write_html(title ? title : "Unknown");
-  puts("</title>");
-  puts("  <style><!--");
-  puts("body {");
-  puts("  font-family: sans-serif;");
-  puts("  font-size: 18px;");
-  puts("  line-height: 150%;");
-  puts("}");
-  puts("a {");
-  puts("  font: inherit;");
-  puts("}");
-  puts("pre, li code, p code {");
-  puts("  font-family: monospace;");
-  puts("  font-size: 14px;");
-  puts("}");
-  puts("pre {");
-  puts("  background: #f8f8f8;");
-  puts("  border: solid thin #666;");
-  puts("  line-height: 120%;");
-  puts("  padding: 10px;");
-  puts("}");
-  puts("li code, p code {");
-  puts("  padding: 2px 5px;");
-  puts("}");
-  puts("table {");
-  puts("  border: solid thin #999;");
-  puts("  border-collapse: collapse;");
-  puts("  border-spacing: 0;");
-  puts("}");
-  puts("td {");
-  puts("  border: solid thin #ccc;");
-  puts("  padding-top: 5px;");
-  puts("}");
-  puts("td.left {");
-  puts("  text-align: left;");
-  puts("}");
-  puts("td.center {");
-  puts("  text-align: center;");
-  puts("}");
-  puts("td.right {");
-  puts("  text-align: right;");
-  puts("}");
-  puts("th {");
-  puts("  background: #ccc;");
-  puts("  border: none;");
-  puts("  border-bottom: solid thin #999;");
-  puts("  padding: 1px 5px;");
-  puts("  text-align: center;");
-  puts("}");
-  puts("--></style>");
-  puts("  </head>");
-  puts("  <body>");
 
   write_block(doc);
 
@@ -154,11 +123,28 @@ make_anchor(const char *text)           /* I - Text */
 
 
 /*
+ * 'scan_toc()' - Scan for headings to include in the table of contents.
+ */
+
+static int				/* O  - Number of table of contents entries */
+scan_toc(mmd_t *parent,			/* I  - Parent node */
+         int   num_toc,			/* I  - Number of table of contents entries */
+         toc_t **toc)			/* IO - Table of contents entries */
+{
+  mmd_t	*node;				/* Current node */
+  toc_t	*temp;				/* Table of contents entry */
+
+
+}
+
+
+/*
  * 'write_block()' - Write a block node as HTML.
  */
 
 static void
-write_block(mmd_t *parent)              /* I - Parent node */
+write_block(FILE  *outfp,		/* I - Output file */
+            mmd_t *parent)              /* I - Parent node */
 {
   const char    *element,               /* Enclosing element, if any */
 		*hclass = NULL;		/* HTML class, if any */
@@ -213,14 +199,14 @@ write_block(mmd_t *parent)              /* I - Parent node */
         break;
 
     case MMD_TYPE_CODE_BLOCK :
-        fputs("    <pre><code>", stdout);
+        fputs("    <pre><code>", outfp);
         for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
-          write_html(mmdGetText(node));
-        puts("</code></pre>");
+          write_html(outfp, mmdGetText(node));
+        fputs("</code></pre>\n", outfp);
         return;
 
     case MMD_TYPE_THEMATIC_BREAK :
-        puts("    <hr />");
+        fputs("    <hr />\n", outfp);
         return;
 
     case MMD_TYPE_TABLE :
@@ -268,29 +254,101 @@ write_block(mmd_t *parent)              /* I - Parent node */
     * Add an anchor for each heading...
     */
 
-    printf("    <%s id=\"", element);
+    fprintf(outfp, "    <%s id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
     {
       if (mmdGetWhitespace(node))
-        fputc('-', stdout);
+        fputc('-', outfp);
 
-      fputs(make_anchor(mmdGetText(node)), stdout);
+      fputs(make_anchor(mmdGetText(node)), outfp);
     }
-    fputs("\">", stdout);
+    fputs("\">", outfp);
   }
   else if (element)
-    printf("    <%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
+    fprintf(outfp, "    <%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {
     if (mmdIsBlock(node))
-      write_block(node);
+      write_block(outfp, node);
     else
-      write_leaf(node);
+      write_leaf(outfp, node);
   }
 
   if (element)
-    printf("</%s>\n", element);
+    fprintf(outfp, "</%s>\n", element);
+}
+
+
+/*
+ * 'write_head()' - Write HTML header.
+ */
+
+static void
+write_head(FILE       *outfp,		/* I - Output file */
+           const char *cssfile,		/* I - CSS file, if any */
+           const char *coverfile,	/* I - Cover image, if any */
+           const char *title,		/* I - Title of book, if any */
+           const char *copyright,	/* I - Copyright, if any */
+           const char *author,		/* I - Author, if any */
+           const char *version)		/* I - Version of book, if any */
+{
+  puts("<!DOCTYPE html>");
+  puts("<html>");
+  puts("  <head>");
+  fputs("    <title>", stdout);
+  write_html(outfp, title ? title : "Unknown");
+  puts("</title>");
+  puts("  <style><!--");
+  puts("body {");
+  puts("  font-family: sans-serif;");
+  puts("  font-size: 18px;");
+  puts("  line-height: 150%;");
+  puts("}");
+  puts("a {");
+  puts("  font: inherit;");
+  puts("}");
+  puts("pre, li code, p code {");
+  puts("  font-family: monospace;");
+  puts("  font-size: 14px;");
+  puts("}");
+  puts("pre {");
+  puts("  background: #f8f8f8;");
+  puts("  border: solid thin #666;");
+  puts("  line-height: 120%;");
+  puts("  padding: 10px;");
+  puts("}");
+  puts("li code, p code {");
+  puts("  padding: 2px 5px;");
+  puts("}");
+  puts("table {");
+  puts("  border: solid thin #999;");
+  puts("  border-collapse: collapse;");
+  puts("  border-spacing: 0;");
+  puts("}");
+  puts("td {");
+  puts("  border: solid thin #ccc;");
+  puts("  padding-top: 5px;");
+  puts("}");
+  puts("td.left {");
+  puts("  text-align: left;");
+  puts("}");
+  puts("td.center {");
+  puts("  text-align: center;");
+  puts("}");
+  puts("td.right {");
+  puts("  text-align: right;");
+  puts("}");
+  puts("th {");
+  puts("  background: #ccc;");
+  puts("  border: none;");
+  puts("  border-bottom: solid thin #999;");
+  puts("  padding: 1px 5px;");
+  puts("  text-align: center;");
+  puts("}");
+  puts("--></style>");
+  puts("  </head>");
+  puts("  <body>");
 }
 
 
@@ -299,7 +357,8 @@ write_block(mmd_t *parent)              /* I - Parent node */
  */
 
 static void
-write_html(const char *text)            /* I - Text string */
+write_html(FILE       *outfp,		/* I - Output file */
+           const char *text)            /* I - Text string */
 {
   if (!text)
     return;
@@ -307,15 +366,15 @@ write_html(const char *text)            /* I - Text string */
   while (*text)
   {
     if (*text == '&')
-      fputs("&amp;", stdout);
+      fputs("&amp;", outfp);
     else if (*text == '<')
-      fputs("&lt;", stdout);
+      fputs("&lt;", outfp);
     else if (*text == '>')
-      fputs("&gt;", stdout);
+      fputs("&gt;", outfp);
     else if (*text == '\"')
-      fputs("&quot;", stdout);
+      fputs("&quot;", outfp);
     else
-      putchar(*text);
+      fputc(*text, outfp);
 
     text ++;
   }
@@ -327,7 +386,8 @@ write_html(const char *text)            /* I - Text string */
  */
 
 static void
-write_leaf(mmd_t *node)                 /* I - Leaf node */
+write_leaf(FILE  *outfp,		/* I - Output file */
+           mmd_t *node)                 /* I - Leaf node */
 {
   const char    *element,               /* Encoding element, if any */
                 *text,                  /* Text to write */
@@ -335,7 +395,7 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
 
 
   if (mmdGetWhitespace(node))
-    putchar(' ');
+    fputc(' ', outfp);
 
   text = mmdGetText(node);
   url  = mmdGetURL(node);
@@ -363,19 +423,19 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
         break;
 
     case MMD_TYPE_IMAGE :
-        fputs("<img src=\"", stdout);
-        write_html(url);
-        fputs("\" alt=\"", stdout);
-        write_html(text);
-        fputs("\" />", stdout);
+        fputs("<img src=\"", outfp);
+        write_html(outfp, url);
+        fputs("\" alt=\"", outfp);
+        write_html(outfp, text);
+        fputs("\" />", outfp);
         return;
 
     case MMD_TYPE_HARD_BREAK :
-        puts("<br />");
+        fputs("<br />\n", outfp);
         return;
 
     case MMD_TYPE_SOFT_BREAK :
-        puts("<wbr />");
+        fputs("<wbr />\n", outfp);
         return;
 
     case MMD_TYPE_METADATA_TEXT :
@@ -389,26 +449,38 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
   if (url)
   {
     if (!strcmp(url, "@"))
-      printf("<a href=\"#%s\">", make_anchor(text));
+      fprintf(outfp,  "<a href=\"#%s\">", make_anchor(text));
     else
-      printf("<a href=\"%s\">", url);
+      fprintf(outfp, "<a href=\"%s\">", url);
   }
 
   if (element)
-    printf("<%s>", element);
+    fprintf(outfp, "<%s>", element);
 
   if (!strcmp(text, "(c)"))
-    fputs("&copy;", stdout);
+    fputs("&copy;", outfp);
   else if (!strcmp(text, "(r)"))
-    fputs("&reg;", stdout);
+    fputs("&reg;", outfp);
   else if (!strcmp(text, "(tm)"))
-    fputs("&trade;", stdout);
+    fputs("&trade;", outfp);
   else
-    write_html(text);
+    write_html(outfp, text);
 
   if (element)
-    printf("</%s>", element);
+    fprintf(outfp, "</%s>", element);
 
   if (url)
-    fputs("</a>", stdout);
+    fputs("</a>", outfp);
+}
+
+
+/*
+ * 'write_toc()' - Write the table-of-contents.
+ */
+
+static void
+write_toc(FILE  *outfp,			/* I - Output file */
+          int   num_toc,		/* I - Number of table of contents entries */
+          toc_t *toc)			/* I - Table of contents entries */
+{
 }

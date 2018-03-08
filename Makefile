@@ -12,20 +12,23 @@
 CC	=	gcc
 CFLAGS	=	-g -Wall
 LIBS	=
-OBJS	=	testmmd.o mmd.o
+OBJS	=	testmmd.o mmd.o mmdbook.o
 
 .SUFFIXES:	.c .o
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
-all:	testmmd DOCUMENTATION.html
+all:	testmmd mmdbook DOCUMENTATION.html
 
 clean:
 	rm -f testmmd $(OBJS)
 
-testmmd:	$(OBJS) testmmd.md
-	$(CC) $(CFLAGS) -o testmmd $(OBJS) $(LIBS)
+mmdbook:	mmd.o mmdbook.o
+	$(CC) $(CFLAGS) -o mmdbook mmd.o mmdbook.o $(LIBS)
+
+testmmd:	mmd.o testmmd.o testmmd.md
+	$(CC) $(CFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
 	./testmmd testmmd.md >testmmd.html
 
 $(OBJS):	mmd.h
