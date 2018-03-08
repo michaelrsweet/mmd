@@ -958,6 +958,11 @@ man_block(FILE	 *outfp,		/* I - Output file */
     case MMD_TYPE_METADATA :
 	return;
 
+    case MMD_TYPE_TABLE : /* No table support for man output at present */
+	fputs(".PP\n", outfp);
+	fputs("[Table Omitted]\n", outfp);
+        return;
+
     default :
 	break;
   }
@@ -971,6 +976,9 @@ man_block(FILE	 *outfp,		/* I - Output file */
   }
 
   fputs("\n", outfp);
+
+  if (type == MMD_TYPE_TABLE)
+    fputs(".TE\n", outfp);
 }
 
 
