@@ -9,23 +9,34 @@
 # information.
 #
 
+VERSION	=	1.3
+prefix	=	/usr/local
+bindir	=	$(prefix)/bin
+mandir	=	$(prefix)/share/man
+
 CC	=	gcc
-CFLAGS	=	-g -Wall
+CFLAGS	=	-Os -g -Wall '-DVERSION="$(VERSION)"'
 LIBS	=
-OBJS	=	testmmd.o mmd.o mmdbook.o
+OBJS	=	testmmd.o mmd.o mmdutil.o
 
 .SUFFIXES:	.c .o
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
-all:	testmmd mmdbook DOCUMENTATION.html
+all:	testmmd mmdutil DOCUMENTATION.html
 
 clean:
 	rm -f testmmd $(OBJS)
 
-mmdbook:	mmd.o mmdbook.o
-	$(CC) $(CFLAGS) -o mmdbook mmd.o mmdbook.o $(LIBS)
+install:	mmdutil
+	mkdir -p $(bindir)
+	cp mmdutil $(bindir)
+	mkdir -p $(mandir)/man1
+	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
+
+mmdutil:	mmd.o mmdutil.o
+	$(CC) $(CFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
 
 testmmd:	mmd.o testmmd.o testmmd.md
 	$(CC) $(CFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)

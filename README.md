@@ -1,6 +1,6 @@
 # mmd
 
-This is a miniature markdown parsing "library" consisting of a single C source
+`mmd` is a miniature markdown parsing "library" consisting of a single C source
 file and accompanying header file.  `mmd` mostly conforms to the CommonMark
 version of markdown syntax with the following exceptions:
 
@@ -27,7 +27,10 @@ extensions:
 
 - Tables.
 
-I'm providing this as open source under the Apache License Version 2.0 with
+`mmd` also includes a standalone utility called `mmdutil` that can be used to
+generate HTML and man page source from markdown.
+
+I'm providing `mmd` as open source under the Apache License Version 2.0 with
 exceptions for use with GPL2/LGPL2 applications which allows you do pretty much
 do whatever you like with it.  Please do provide feedback and report bugs to the
 Github project page at:
@@ -42,7 +45,7 @@ so that everyone can benefit.
 You'll need a C compiler.
 
 
-## How to Incorporate With Your Project
+## How to Incorporate in Your Project
 
 Add the `mmd.c` and `mmd.h` files to your project.  Include the `mmd.h`
 header in any file that needs to read/convert markdown files.
@@ -56,8 +59,27 @@ HTML file called `testmmd.html`:
 
     make
 
+The makefile also builds the `mmdutil` program.
 
-## Changes In v1.2
+
+## Installing `mmdutil`
+
+You can install the `mmdutil` program by copying it to somewhere appropriate or
+run:
+
+    make install
+
+to install it in `/usr/local` along with a man page.
+
+
+## Changes in v1.3
+
+The following changes were made for v1.3:
+
+- Added `mmdutil` program for converting markdown to HTML and man files.
+
+
+## Changes in v1.2
 
 The following changes were made for v1.2:
 
@@ -65,7 +87,7 @@ The following changes were made for v1.2:
 - Added support for markdown tables (Issue #3)
 
 
-## Changes In v1.1
+## Changes in v1.1
 
 The following changes were made for v1.1:
 

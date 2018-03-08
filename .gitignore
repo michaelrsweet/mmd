@@ -2,4 +2,5 @@
 *.o
 commonmark.md
 mmd-160.png
+mmdutil
 testmmd
