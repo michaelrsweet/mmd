@@ -295,7 +295,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
                 *lineend;               /* End of line */
   int           blank_code = 0;         /* Saved indented blank code line */
   mmd_type_t	columns[256];		/* Alignment of table columns */
-  int		rows;			/* Number of rows in table */
+  int		rows = 0;		/* Number of rows in table */
 
 
  /*
@@ -446,7 +446,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       int	col;			/* Current column */
       char	*start,			/* Start of column/cell */
 		*end;			/* End of column/cell */
-      mmd_t	*row,			/* Current row */
+      mmd_t	*row = NULL,		/* Current row */
 		*cell;			/* Current cell */
 
 //      fprintf(stderr, "TABLE current=%p (%d), rows=%d\n", current, current->type, rows);
