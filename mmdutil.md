@@ -12,9 +12,9 @@ mmdutil - mini markdown utility program.
 
 # Synopsis
 
-mmdutil [--cover filename.ext] [--css filename.css] [--front filename.md] [--toc levels] [-o filename.html] filename.md [... filenameN.md]
+mmdutil \[--cover filename.ext\] \[--css filename.css\] \[--front filename.md\] \[--toc levels\] \[-o filename.html\] filename.md \[... filenameN.md\]
 
-mmdutil [--front filename.md] [--man section] [-o filename.man] filename.md [... filenameN.md]
+mmdutil \[--front filename.md\] \[--man section\] \[-o filename.man\] filename.md \[... filenameN.md\]
 
 mmdutil --help
 
