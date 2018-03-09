@@ -10,7 +10,7 @@
 #
 
 VERSION	=	1.3
-prefix	=	/usr/local
+prefix	=	$(DESTDIR)/usr/local
 bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
 
