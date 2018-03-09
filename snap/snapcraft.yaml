@@ -16,7 +16,7 @@ icon: mmd-128.png
 
 apps:
     mmdutil:
-        command: bin/mmdutil
+        command: usr/local/bin/mmdutil
         plugs: [home]
 
 parts:
