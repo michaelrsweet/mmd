@@ -10,9 +10,9 @@
 #
 
 VERSION	=	1.3
-prefix	=	/usr/local
-bindir	=	$(DESTDIR)$(prefix)/bin
-mandir	=	$(DESTDIR)$(prefix)/share/man
+prefix	=	$(DESTDIR)/usr/local
+bindir	=	$(prefix)/bin
+mandir	=	$(prefix)/share/man
 
 CC	=	gcc
 CFLAGS	=	-Os -g -Wall '-DVERSION="$(VERSION)"'

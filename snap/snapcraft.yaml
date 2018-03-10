@@ -16,10 +16,11 @@ icon: mmd-128.png
 
 apps:
     mmdutil:
-        command: usr/local/bin/mmdutil
+        command: bin/mmdutil
         plugs: [home]
 
 parts:
     main:
         plugin: make
         source: .
+        make-install-var: prefix
