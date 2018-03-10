@@ -335,11 +335,8 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
 	  toc_t **toc)			/* IO - Table of contents entries */
 {
   mmd_t		*node,			/* Current node */
-		*tnode,			/* Title node */
 		*next;			/* Next node */
   mmd_type_t	type;			/* Node type */
-  char		heading[1024],		/* Heading text */
-		*ptr;			/* Pointer into title */
   toc_t		*temp;			/* Table of contents entry */
   int		alloc_toc = num_toc;	/* Allocated entries */
 
@@ -350,17 +347,6 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
 
     if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6 && (type - MMD_TYPE_HEADING_1) < toc_levels)
     {
-      heading[sizeof(heading) - 1] = '\0';
-
-      for (tnode = mmdGetFirstChild(node), ptr = heading; tnode; tnode = mmdGetNextSibling(tnode))
-      {
-	if (mmdGetWhitespace(tnode) && ptr < (heading + sizeof(heading) - 1))
-	  *ptr++ = ' ';
-
-	strncpy(ptr, mmdGetText(tnode), sizeof(heading) - (ptr - heading) - 1);
-	ptr += strlen(ptr);
-      }
-
       if (num_toc >= alloc_toc)
       {
 	alloc_toc += 10;
@@ -381,7 +367,7 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
       temp = *toc + num_toc;
       num_toc ++;
 
-      temp->heading = strdup(heading);
+      temp->heading = mmdCopyAllText(node);
       temp->level   = type - MMD_TYPE_HEADING_1 + 1;
     }
 

@@ -53,6 +53,91 @@ static void     mmd_remove(mmd_t *node);
 
 
 /*
+ * 'mmdCopyAllText()' - Make a copy of all the text under a given node.
+ *
+ * The returned string must be freed using free().
+ */
+
+char *					/* O - Copied string */
+mmdCopyAllText(mmd_t *node)		/* I - Parent node */
+{
+  char		*all = NULL,		/* String buffer */
+		*allptr = NULL,		/* Pointer into string buffer */
+		*temp;			/* Temporary pointer */
+  size_t	allsize = 0,		/* Size of "all" buffer */
+		textlen;		/* Length of "text" string */
+  mmd_t		*current,		/* Current node */
+		*next;			/* Next node */
+
+
+  current = mmdGetFirstChild(node);
+
+  while (current != node)
+  {
+    if (current->text)
+    {
+     /*
+      * Append this node's text to the string...
+      */
+
+      textlen = strlen(current->text);
+
+      if (allsize == 0)
+      {
+        allsize = textlen + current->whitespace + 1;
+        all     = malloc(allsize);
+        allptr  = all;
+
+	if (!all)
+	  return (NULL);
+      }
+      else
+      {
+        allsize += textlen + current->whitespace;
+        temp    = realloc(all, allsize);
+
+        if (!temp)
+        {
+          free(all);
+          return (NULL);
+        }
+
+        allptr = temp + (allptr - all);
+        all    = temp;
+      }
+
+      if (current->whitespace)
+        *allptr++ = ' ';
+
+      memcpy(allptr, current->text, textlen);
+      allptr += textlen;
+    }
+
+   /*
+    * Find the next logical node...
+    */
+
+    if ((next = mmdGetNextSibling(current)) == NULL)
+    {
+      next = mmdGetParent(current);
+
+      while (next && next != node && mmdGetNextSibling(next) == NULL)
+	next = mmdGetParent(next);
+
+      if (next != node)
+        next = mmdGetNextSibling(next);
+    }
+
+    current = next;
+  }
+
+  *allptr = '\0';
+
+  return (all);
+}
+
+
+/*
  * 'mmdFree()' - Free a markdown tree.
  */
 

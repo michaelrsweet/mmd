@@ -76,6 +76,8 @@ to install it in `/usr/local` along with a man page.
 
 The following changes were made for v1.3:
 
+- Added `mmdCopyAllText` function that returns all of the text under the given
+  node.
 - Added `mmdutil` program for converting markdown to HTML and man files.
 
 
