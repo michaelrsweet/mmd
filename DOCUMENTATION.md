@@ -2,7 +2,7 @@
 title: How to Use the mmd "Library"
 author: Michael R Sweet
 copyright: Copyright © 2017-2018 by Michael R Sweet
-version: 1.3
+version: 1.4
 ...
 
 # Contents

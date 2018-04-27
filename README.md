@@ -72,6 +72,15 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+## Changes in v1.4
+
+The following changes were made for v1.4:
+
+- Fixed a table parsing bug where trailing pipes would add empty cells on the
+  right side.
+- Tweaked the `mmdutil` program's default HTML stylesheet.
+
+
 ## Changes in v1.3
 
 The following changes were made for v1.3:
