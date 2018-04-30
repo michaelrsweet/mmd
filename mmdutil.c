@@ -472,10 +472,14 @@ html_block(FILE	 *outfp,		/* I - Output file */
 	break;
 
     case MMD_TYPE_CODE_BLOCK :
-	fputs("	   <pre><code>", outfp);
+	fputs("	   <pre>", outfp);
 	for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
+	{
+	  fputs("<code>", outfp);
 	  html_puts(outfp, mmdGetText(node));
-	fputs("</code></pre>\n", outfp);
+	  fputs("</code>", outfp);
+	}
+	fputs("</pre>\n", outfp);
 	return;
 
     case MMD_TYPE_THEMATIC_BREAK :
@@ -639,7 +643,10 @@ html_head(FILE	     *outfp,		/* I - Output file */
     fputs("  border: solid thin #666;\n", outfp);
     fputs("  font-size: 14px;\n", outfp);
     fputs("  line-height: 120%;\n", outfp);
+    fputs("  margin-left: 2em;\n", outfp);
     fputs("  padding: 10px;\n", outfp);
+    fputs("  text-indent: -2em;\n", outfp);
+    fputs("  white-space: pre-wrap;\n", outfp);
     fputs("}\n", outfp);
     fputs("li code, p code {\n", outfp);
     fputs("  padding: 2px 5px;\n", outfp);
