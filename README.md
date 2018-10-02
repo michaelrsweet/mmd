@@ -74,18 +74,13 @@ to install it in `/usr/local` along with a man page.
 
 ## Changes in vCURRENT
 
-The following changes were made for vCURRENT
-
-- Fixed some Clang static analyzer warnings in `mmd.c`.
-
-
-## Changes in v1.4
-
 The following changes were made for v1.4:
 
 - Fixed a table parsing bug where trailing pipes would add empty cells on the
   right side.
 - Tweaked the `mmdutil` program's default HTML stylesheet.
+- Fixed some Clang static analyzer warnings in `mmd.c`.
+- Fixed a build issue with Visual Studio.
 
 
 ## Changes in v1.3
