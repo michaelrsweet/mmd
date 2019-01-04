@@ -72,13 +72,14 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
-## Changes in vCURRENT
+## Changes in v1.4
 
 The following changes were made for v1.4:
 
 - Fixed a table parsing bug where trailing pipes would add empty cells on the
   right side.
 - Tweaked the `mmdutil` program's default HTML stylesheet.
+- Fixed `mmdutil` error messages that incorrectly called the program `mmdbook`.
 - Fixed some Clang static analyzer warnings in `mmd.c`.
 - Fixed a build issue with Visual Studio.
 
@@ -116,7 +117,7 @@ The following changes were made for v1.1:
 
 ## Legal Stuff
 
-Copyright © 2017-2018 by Michael R Sweet.
+Copyright © 2017-2019 by Michael R Sweet.
 
 mmd is licensed under the Apache License Version 2.0 with an exception to
 allow linking against GPL2/LGPL2 software (like older versions of CUPS).  See

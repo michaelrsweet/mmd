@@ -18,7 +18,7 @@
  *    --version			Show version.
  *    -o filename.ext		Specify output file (default is stdout).
  *
- * Copyright © 2017-2018 by Michael R Sweet.
+ * Copyright © 2017-2019 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
@@ -116,7 +116,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	i ++;
 	if (i >= argc)
 	{
-	  fputs("mmdbook: Missing cover image filename after '--cover'.", stderr);
+	  fputs("mmdutil: Missing cover image filename after '--cover'.", stderr);
 	  usage();
 	  return (1);
 	}
@@ -128,7 +128,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	i ++;
 	if (i >= argc)
 	{
-	  fputs("mmdbook: Missing cover image filename after '--css'.", stderr);
+	  fputs("mmdutil: Missing cover image filename after '--css'.", stderr);
 	  usage();
 	  return (1);
 	}
@@ -140,14 +140,14 @@ main(int  argc,				/* I - Number of command-line arguments */
 	i ++;
 	if (i >= argc)
 	{
-	  fputs("mmdbook: Missing frontmatter filename after '--front'.", stderr);
+	  fputs("mmdutil: Missing frontmatter filename after '--front'.", stderr);
 	  usage();
 	  return (1);
 	}
 
 	if ((front = mmdLoad(argv[i])) == NULL)
 	{
-	  fprintf(stderr, "mmdbook: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
+	  fprintf(stderr, "mmdutil: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
 	  return (1);
 	}
 
@@ -170,7 +170,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	i ++;
 	if (i >= argc || (section = atoi(argv[i])) <= 0)
 	{
-	  fputs("mmdbook: Missing/bad section number after '--man'.", stderr);
+	  fputs("mmdutil: Missing/bad section number after '--man'.", stderr);
 	  usage();
 	  return (1);
 	}
@@ -182,7 +182,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	i ++;
 	if (i >= argc || (toc_levels = atoi(argv[i])) <= 0)
 	{
-	  fputs("mmdbook: Missing/bad levels number after '--toc'.", stderr);
+	  fputs("mmdutil: Missing/bad levels number after '--toc'.", stderr);
 	  usage();
 	  return (1);
 	}
@@ -194,7 +194,7 @@ main(int  argc,				/* I - Number of command-line arguments */
       }
       else
       {
-	fprintf(stderr, "mmdbook: Unknown option '%s'.\n", argv[i]);
+	fprintf(stderr, "mmdutil: Unknown option '%s'.\n", argv[i]);
 	usage();
 	return (1);
       }
@@ -209,7 +209,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	      i ++;
 	      if (i >= argc)
 	      {
-		fputs("mmdbook: Missing output filename after '-o'.\n", stderr);
+		fputs("mmdutil: Missing output filename after '-o'.\n", stderr);
 		usage();
 		return (1);
 	      }
@@ -218,7 +218,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	      break;
 
 	  default :
-	      fprintf(stderr, "mmdbook: Unknown option '-%c'.\n", *opt);
+	      fprintf(stderr, "mmdutil: Unknown option '-%c'.\n", *opt);
 	      usage();
 	      return (1);
 	}
@@ -228,7 +228,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     {
       if ((files[num_files] = mmdLoad(argv[i])) == NULL)
       {
-	fprintf(stderr, "mmdbook: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
+	fprintf(stderr, "mmdutil: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
 	return (1);
       }
 
@@ -245,7 +245,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     }
     else
     {
-      fputs("mmdbook: Too many input files.\n", stderr);
+      fputs("mmdutil: Too many input files.\n", stderr);
       return (1);
     }
   }
@@ -260,7 +260,7 @@ main(int  argc,				/* I - Number of command-line arguments */
   {
     if ((outfp = fopen(outfile, "w")) == NULL)
     {
-      fprintf(stderr, "mmdbook: Unable to create \"%s\": %s\n", outfile, strerror(errno));
+      fprintf(stderr, "mmdutil: Unable to create \"%s\": %s\n", outfile, strerror(errno));
       return (1);
     }
   }
@@ -357,7 +357,7 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
 
 	if (!temp)
 	{
-	  fputs("mmdbook: Unable to allocate memory for table of contents.\n", stderr);
+	  fputs("mmdutil: Unable to allocate memory for table of contents.\n", stderr);
 	  exit(1);
 	}
 
@@ -611,7 +611,7 @@ html_head(FILE	     *outfp,		/* I - Output file */
     }
     else
     {
-      fprintf(stderr, "mmdbook: Unable to open \"%s\": %s\n", cssfile, strerror(errno));
+      fprintf(stderr, "mmdutil: Unable to open \"%s\": %s\n", cssfile, strerror(errno));
       exit(1);
     }
   }
@@ -645,7 +645,6 @@ html_head(FILE	     *outfp,		/* I - Output file */
     fputs("  line-height: 120%;\n", outfp);
     fputs("  margin-left: 2em;\n", outfp);
     fputs("  padding: 10px;\n", outfp);
-    fputs("  text-indent: -2em;\n", outfp);
     fputs("  white-space: pre-wrap;\n", outfp);
     fputs("}\n", outfp);
     fputs("li code, p code {\n", outfp);

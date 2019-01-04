@@ -3,7 +3,7 @@
 #
 #     https://github.com/michaelrsweet/mmd
 #
-# Copyright © 2017-2018 by Michael R Sweet.
+# Copyright © 2017-2019 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
@@ -15,9 +15,11 @@ bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
 
 CC	=	gcc
-CFLAGS	=	-Os -g -Wall '-DVERSION="$(VERSION)"'
+CFLAGS	=	$(OPTIM) -Wall '-DVERSION="$(VERSION)"'
+LDFLAGS	=	$(OPTIM)
 LIBS	=
 OBJS	=	testmmd.o mmd.o mmdutil.o
+OPTIM	=	-Os -g
 
 .SUFFIXES:	.c .o
 .c.o:
@@ -36,10 +38,10 @@ install:	mmdutil
 	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
 
 mmdutil:	mmd.o mmdutil.o
-	$(CC) $(CFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
+	$(CC) $(LDFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
 
 testmmd:	mmd.o testmmd.o testmmd.md
-	$(CC) $(CFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
+	$(CC) $(LDFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
 	./testmmd testmmd.md >testmmd.html
 
 $(OBJS):	mmd.h
