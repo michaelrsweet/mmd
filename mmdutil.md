@@ -1,7 +1,7 @@
 ---
 title: mmdutil
 author: Michael R Sweet
-copyright: Copyright © 2017-2018 by Michael R Sweet
+copyright: Copyright © 2017-2019 by Michael R Sweet
 version: 1.4
 ...
 
@@ -70,4 +70,4 @@ Generate a man page from "example.md":
 
 # See Also
 
-Mini-Markdown Home Page: https://michaelrsweet.github.io/mmd
+Mini-Markdown Home Page: https://www.msweet.org/mmd

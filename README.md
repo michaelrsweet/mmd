@@ -35,7 +35,7 @@ exceptions for use with GPL2/LGPL2 applications which allows you do pretty much
 do whatever you like with it.  Please do provide feedback and report bugs to the
 Github project page at:
 
-    https://github.com/michaelrsweet/mmd
+    https://www.msweet.org/mmd
 
 so that everyone can benefit.
 
