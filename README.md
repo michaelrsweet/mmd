@@ -1,16 +1,12 @@
 # mmd
 
 `mmd` is a miniature markdown parsing "library" consisting of a single C source
-file and accompanying header file.  `mmd` mostly conforms to the CommonMark
+file and accompanying header file.  `mmd` mostly conforms to the [CommonMark][]
 version of markdown syntax with the following exceptions:
 
 - Embedded HTML markup and entities are explicitly not supported or allowed;
   the reason for this is to better support different kinds of output from the
   markdown "source", including XHTML, man, and `xml2rfc`.
-
-- Link reference definitions are not supported; these probably will be supported
-  in a future version of the parsing code but will need explicit support in any
-  output code to resolve the references.
 
 - Link titles are silently ignored.
 
@@ -25,7 +21,7 @@ extensions:
 
 - "@" links which resolve to headings within the file.
 
-- Tables.
+- Tables as used by the [Github Flavored Markdown Spec][GFM].
 
 `mmd` also includes a standalone utility called `mmdutil` that can be used to
 generate HTML and man page source from markdown.
@@ -131,3 +127,9 @@ Copyright © 2017-2019 by Michael R Sweet.
 mmd is licensed under the Apache License Version 2.0 with an exception to
 allow linking against GPL2/LGPL2 software (like older versions of CUPS).  See
 the files "LICENSE" and "NOTICE" for more information.
+
+
+## References
+
+[CommonMark]: https://spec.commonmark.org
+[GFM]: https://github.github.com/gfm
