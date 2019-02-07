@@ -3,7 +3,7 @@
  *
  *     https://github.com/michaelrsweet/mmd
  *
- * Copyright © 2017-2018 by Michael R Sweet.
+ * Copyright © 2017-2019 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.  See the file "LICENSE" for more
  * information.
@@ -34,20 +34,20 @@
 #include <string.h>
 
 
- /*
-  * Microsoft also renames the POSIX functions to _name, and introduces
-  * a broken compatibility layer using the original names.  As a result,
-  * random crashes can occur when, for example, strdup() allocates memory
-  * from a different heap than used by malloc() and free().
-  *
-  * To avoid moronic problems like this, we #define the POSIX function
-  * names to the corresponding non-standard Microsoft names.
-  */
+/*
+ * Microsoft renames the POSIX functions to _name, and introduces a broken
+ * compatibility layer using the original names.  As a result, random crashes
+ * can occur when, for example, strdup() allocates memory from a different heap
+ * than used by malloc() and free().
+ *
+ * To avoid moronic problems like this, we #define the POSIX function names to
+ * the corresponding non-standard Microsoft names.
+ */
 
-#ifdef WIN32
+#ifdef _WIN32
 #  define snprintf 	_snprintf
 #  define strdup	_strdup
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 
 /*
@@ -939,6 +939,9 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
       }
 
       whitespace = 1;
+
+      if (isspace(lineptr[1] & 255) && !lineptr[2])
+        mmd_add(parent, MMD_TYPE_HARD_BREAK, 0, NULL, NULL);
     }
     else if (*lineptr == '!' && lineptr[1] == '[' && type != MMD_TYPE_CODE_TEXT)
     {
@@ -1027,22 +1030,24 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
       whitespace = 0;
       lineptr --;
     }
-    else if (*lineptr == '*' && type != MMD_TYPE_CODE_TEXT)
+    else if ((*lineptr == '*' || *lineptr == '_') && type != MMD_TYPE_CODE_TEXT)
     {
+      int delim = *lineptr;		/* Delimiter */
+
       if (text)
       {
         *lineptr = '\0';
 
         mmd_add(parent, type, whitespace, text, NULL);
 
-        *lineptr   = '*';
+        *lineptr   = delim;
         text       = NULL;
         whitespace = 0;
       }
 
       if (type == MMD_TYPE_NORMAL_TEXT)
       {
-        if (lineptr[1] == '*' && !isspace(lineptr[2] & 255))
+        if (lineptr[1] == delim && !isspace(lineptr[2] & 255))
         {
           type = MMD_TYPE_STRONG_TEXT;
           lineptr ++;
@@ -1056,9 +1061,33 @@ mmd_parse_inline(mmd_t *parent,         /* I - Parent node */
       }
       else
       {
-        if (lineptr[1] == '*')
+        if (lineptr[1] == delim)
           lineptr ++;
 
+        type = MMD_TYPE_NORMAL_TEXT;
+      }
+    }
+    else if (lineptr[0] == '~' && lineptr[1] == '~' && type != MMD_TYPE_CODE_TEXT)
+    {
+      if (text)
+      {
+        *lineptr = '\0';
+
+        mmd_add(parent, type, whitespace, text, NULL);
+
+        *lineptr   = '~';
+        text       = NULL;
+        whitespace = 0;
+      }
+
+      if (!isspace(lineptr[2] & 255) && type == MMD_TYPE_NORMAL_TEXT)
+      {
+	type = MMD_TYPE_STRUCK_TEXT;
+        text = lineptr + 2;
+      }
+      else
+      {
+	lineptr ++;
         type = MMD_TYPE_NORMAL_TEXT;
       }
     }

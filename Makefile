@@ -9,7 +9,7 @@
 # information.
 #
 
-VERSION	=	1.4
+VERSION	=	1.5
 prefix	=	$(DESTDIR)/usr/local
 bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
@@ -44,7 +44,7 @@ testmmd:	mmd.o testmmd.o testmmd.md
 	$(CC) $(LDFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
 	./testmmd testmmd.md >testmmd.html
 
-$(OBJS):	mmd.h
+$(OBJS):	mmd.h Makefile
 
 DOCUMENTATION.html:	DOCUMENTATION.md testmmd
 	./testmmd DOCUMENTATION.md >DOCUMENTATION.html

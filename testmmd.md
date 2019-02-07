@@ -93,6 +93,17 @@ Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)
 This sentence contains *Emphasized Text*, **Bold Text**, and `Code Text` for
 testing the MMD parser.  The `<mmd.h>` header file.
 
+This sentence contains _Emphasized Text_, __Bold Text__, and
+~~Strikethrough Text~~ for testing the MMD parser.
+
+All work and no play makes Johnny a dull boy.
+All work and no play makes Johnny a dull boy.
+All work and no play makes Johnny a dull boy.
+
+All work and no play makes Johnny a dull boy.  
+All work and no play makes Johnny a dull boy.  
+All work and no play makes Johnny a dull boy.
+
 \(Escaped Parenthesis)
 
 \(*Emphasized Parenthesis*)

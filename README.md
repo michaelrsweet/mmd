@@ -72,6 +72,14 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+## Changes in v1.5
+
+The following changes were made for v1.5:
+
+- Added support for `__bold__`, `_italic_`, `~~strikethrough~~`, and hard
+  line breaks (Issue #4)
+
+
 ## Changes in v1.4
 
 The following changes were made for v1.4:
