@@ -76,6 +76,7 @@ to install it in `/usr/local` along with a man page.
 
 The following changes were made for v1.5:
 
+- Added support for referenced links (Issue #1)
 - Added support for `__bold__`, `_italic_`, `~~strikethrough~~`, and hard
   line breaks (Issue #4)
 

@@ -86,6 +86,17 @@ Link to [Heading 1](@).
 
 Link to [`Heading 2`](@).
 
+Implicit link to [reference1][].
+
+[reference1]: https://michaelrsweet.github.io/mmd 'MMD Home Page'
+[reference2]: https://michaelrsweet.github.io/mmd/mmd.html 'MMD Documentation'
+[reference3]: https://michaelrsweet.github.io/mmd/mmd-160.png 'MMD Logo'
+
+Link to [mmd web site][reference1].
+Link to [mmd documentation][reference2].
+Link to ![mmd logo][reference3].
+Link to [bad reference][reference4].
+
 Autolink to <https://michaelrsweet.github.io/mmd>.
 
 Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)
