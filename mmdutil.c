@@ -330,7 +330,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 
 static int				/* O  - Number of table of contents entries */
 build_toc(mmd_t *parent,		/* I  - Parent node */
-	  int	toc_levels,		/* Number of levels in table of contents */
+	  int	toc_levels,		/* I  - Number of levels in table of contents */
 	  int	num_toc,		/* I  - Number of table of contents entries */
 	  toc_t **toc)			/* IO - Table of contents entries */
 {
@@ -350,12 +350,7 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
       if (num_toc >= alloc_toc)
       {
 	alloc_toc += 10;
-	if (alloc_toc == 10)
-	  temp = malloc(alloc_toc * sizeof(toc_t));
-	else
-	  temp = realloc(*toc, alloc_toc * sizeof(toc_t));
-
-	if (!temp)
+	if ((temp = realloc(*toc, alloc_toc * sizeof(toc_t))) == NULL)
 	{
 	  fputs("mmdutil: Unable to allocate memory for table of contents.\n", stderr);
 	  exit(1);
