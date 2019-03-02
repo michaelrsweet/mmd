@@ -162,3 +162,14 @@ Table in block quote:
 > Cell 1,1  | Cell 1,2  | Cell 1,3
 > Cell 2,1  | Cell 2,2  | Cell 2,3
 > Cell 3,1  | Cell 3,2  | Cell 3,3
+
+# Tests for Bugs/Edge Cases
+
+Paragraph with "|" that should not
+be interpreted as a table.
+
+    code before a bulleted list
+
+- First item
+- Second item
+

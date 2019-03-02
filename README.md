@@ -68,6 +68,13 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+## Changes in v1.6
+
+The following changes were made for v1.6:
+
+- Fixed some parsing bugs (Issue #7)
+
+
 ## Changes in v1.5
 
 The following changes were made for v1.5:
