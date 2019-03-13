@@ -68,7 +68,7 @@ And unordered lists:
 
 * Third item.
 
-Code block:
+Code block with `\``:
 
 ```
 #include <stdio.h>
@@ -78,7 +78,21 @@ int main(void)
   puts("Hello, World!");
   return (0);
 }
+~~~
 ```
+
+Code block with `~`:
+
+~~~
+#include <stdio.h>
+
+int main(void)
+{
+  puts("Hello, World!");
+  return (0);
+}
+```
+~~~
 
 Link to [mmd web site](https://michaelrsweet.github.io/mmd).
 
@@ -98,6 +112,11 @@ Link to ![mmd logo][reference3].
 Link to [bad reference][reference4].
 
 Autolink to <https://michaelrsweet.github.io/mmd>.
+
+Autolink in parenthesis (<https://michaelrsweet.github.io/mmd>).
+
+[Link broken
+across two lines](https://michaelrsweet.github.io/mmd)
 
 Image: ![Michael R Sweet](https://michaelrsweet.github.io/apple-touch-icon.png)
 
@@ -122,6 +141,8 @@ All work and no play makes Johnny a dull boy.
 \(**Boldface Parenthesis**)
 
 \(`Code Parenthesis`)
+
+Escaped backtick (`\``)
 
 Tables as code:
 

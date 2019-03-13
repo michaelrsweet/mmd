@@ -107,6 +107,7 @@ static void     mmd_free(mmd_t *node);
 static int	mmd_is_table(FILE *fp);
 static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, char *line);
 static char     *mmd_parse_link(_mmd_doc_t *doc, char *lineptr, char **text, char **url, char **refname);
+static char	*mmd_read_line(FILE *fp, char *line, size_t linesize);
 static void	mmd_ref_add(_mmd_doc_t *doc, mmd_t *node, const char *name, const char *url);
 static _mmd_ref_t *mmd_ref_find(_mmd_doc_t *doc, const char *name);
 static void     mmd_remove(mmd_t *node);
@@ -448,6 +449,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   mmd_type_t	columns[256];		/* Alignment of table columns */
   int		num_columns = 0,	/* Number of columns in table */
 		rows = 0;		/* Number of rows in table */
+  char		fence = '\0';		/* Code fence character */
 
 
  /*
@@ -468,7 +470,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   * Read lines until end-of-file...
   */
 
-  while (fgets(line, sizeof(line), fp))
+  while (mmd_read_line(fp, line, sizeof(line)))
   {
     lineptr = line;
 
@@ -492,14 +494,23 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       blank_code = 0;
       continue;
     }
-    else if (*lineptr == '`' && (!lineptr[1] || lineptr[1] == '`'))
+    else if ((!fence && (!strncmp(lineptr, "```", 3) || !strncmp(lineptr, "~~~", 3))) ||
+             (fence == '`' && !strncmp(lineptr, "```", 3)) ||
+             (fence == '~' && !strncmp(lineptr, "~~~", 3)))
     {
+     /*
+      * Code fence...
+      */
+
+      fence = *lineptr;
+
       if (block)
       {
         if (block->type == MMD_TYPE_CODE_BLOCK)
         {
           DEBUG_puts("Ending code block...\n");
           block = NULL;
+          fence = '\0';
         }
         else if (block->type == MMD_TYPE_LIST_ITEM)
           block = mmd_add(block, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
@@ -527,7 +538,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
       block = mmd_add(doc.root, MMD_TYPE_METADATA, 0, NULL, NULL);
 
-      while (fgets(line, sizeof(line), fp))
+      while (mmd_read_line(fp, line, sizeof(line)))
       {
         lineptr = line;
 
@@ -998,7 +1009,7 @@ mmd_is_table(FILE *fp)			/* I - File to read from */
 
   pos = ftell(fp);
 
-  if (fgets(line, sizeof(line), fp))
+  if (mmd_read_line(fp, line, sizeof(line)))
   {
     for (ptr = line; *ptr; ptr ++)
     {
@@ -1382,6 +1393,19 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
   }
 
   return (lineptr);
+}
+
+
+/*
+ * 'mmd_read_line()' - Read a line from a file in a Markdown-aware way.
+ */
+
+static char *				/* O - Pointer to line or `NULL` on EOF */
+mmd_read_line(FILE   *fp,		/* I - File */
+              char   *line,		/* I - Line buffer */
+              size_t linesize)		/* I - Size of line buffer */
+{
+  return (fgets(line, linesize, fp));
 }
 
 
