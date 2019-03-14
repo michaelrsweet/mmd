@@ -7,7 +7,7 @@
  *
  *     ./testmmd filename.md
  *
- * Copyright © 2017-2018 by Michael R Sweet.
+ * Copyright © 2017-2019 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.  See the file "LICENSE" for more
  * information.
@@ -138,6 +138,9 @@ make_anchor(const char *text)           /* I - Text */
   char          *bufptr;                /* Pointer into buffer */
   static char   buffer[1024];           /* Buffer for anchor string */
 
+
+  if (!text)
+    return ("");
 
   for (bufptr = buffer; *text && bufptr < (buffer + sizeof(buffer) - 1); text ++)
   {

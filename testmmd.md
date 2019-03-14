@@ -126,6 +126,24 @@ testing the MMD parser.  The `<mmd.h>` header file.
 This sentence contains _Emphasized Text_, __Bold Text__, and
 ~~Strikethrough Text~~ for testing the MMD parser.
 
+*Emphasized Text Split
+Across Two Lines*
+
+**Bold Text Split
+Across Two Lines**
+
+`Code Text Split
+Across Two lines`
+
+_Emphasized Text Split
+Across Two Lines_
+
+__Bold Text Split
+Across Two Lines__
+
+~~Strikethrough Text Split
+Across Two Lines~~
+
 All work and no play makes Johnny a dull boy.
 All work and no play makes Johnny a dull boy.
 All work and no play makes Johnny a dull boy.

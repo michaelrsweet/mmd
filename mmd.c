@@ -81,7 +81,14 @@ struct _mmd_s
                 *next_sibling;          /* Next sibling node */
 };
 
-typedef struct _mmd_ref_s
+typedef struct _mmd_linebuf_s		/**** Line buffer ****/
+{
+  FILE		*fp;			/* File pointer */
+  char		buffer[8192],		/* Buffer */
+		*bufptr;		/* Pointer into buffer */
+} _mmd_linebuf_t;
+
+typedef struct _mmd_ref_s		/**** Reference link ****/
 {
   char		*name,			/* Name of reference */
 		*url;			/* Reference URL */
@@ -89,7 +96,7 @@ typedef struct _mmd_ref_s
   mmd_t		**pending;		/* Pending nodes */
 } _mmd_ref_t;
 
-typedef struct _mmd_doc_s
+typedef struct _mmd_doc_s		/**** Markdown document ****/
 {
   mmd_t		*root;			/* Root node */
   size_t	num_references;		/* Number of references */
@@ -105,9 +112,9 @@ typedef struct _mmd_doc_s
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
 static int	mmd_is_table(FILE *fp);
-static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, char *line);
-static char     *mmd_parse_link(_mmd_doc_t *doc, char *lineptr, char **text, char **url, char **refname);
-static char	*mmd_read_line(FILE *fp, char *line, size_t linesize);
+static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, _mmd_linebuf_t *line, char *lineptr);
+static char     *mmd_parse_link(_mmd_doc_t *doc, _mmd_linebuf_t *line, char *lineptr, char **text, char **url, char **refname);
+static char	*mmd_read_line(_mmd_linebuf_t *line, int append);
 static void	mmd_ref_add(_mmd_doc_t *doc, mmd_t *node, const char *name, const char *url);
 static _mmd_ref_t *mmd_ref_find(_mmd_doc_t *doc, const char *name);
 static void     mmd_remove(mmd_t *node);
@@ -442,9 +449,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   mmd_t         *current,               /* Current parent block */
                 *block = NULL;          /* Current block */
   mmd_type_t    type;                   /* Type for line */
-  char          line[65536],            /* Line from file */
-                *lineptr,               /* Pointer into line */
-                *lineend;               /* End of line */
+  _mmd_linebuf_t line;			/* Line buffer */
+  char		*lineptr,               /* Pointer into line */
+		*lineend;               /* End of line */
   int           blank_code = 0;         /* Saved indented blank code line */
   mmd_type_t	columns[256];		/* Alignment of table columns */
   int		num_columns = 0,	/* Number of columns in table */
@@ -470,14 +477,14 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   * Read lines until end-of-file...
   */
 
-  while (mmd_read_line(fp, line, sizeof(line)))
-  {
-    lineptr = line;
+  line.fp = fp;
 
+  while ((lineptr = mmd_read_line(&line, 0)) != NULL)
+  {
     while (isspace(*lineptr & 255))
       lineptr ++;
 
-    if ((lineptr - line) >= 4 && !block && (current == doc.root || current->type == MMD_TYPE_CODE_BLOCK))
+    if ((lineptr - line.buffer) >= 4 && !block && (current == doc.root || current->type == MMD_TYPE_CODE_BLOCK))
     {
      /*
       * Indented code block.
@@ -489,7 +496,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       if (blank_code)
         mmd_add(current, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
 
-      mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line + 4, NULL);
+      mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line.buffer + 4, NULL);
 
       blank_code = 0;
       continue;
@@ -527,7 +534,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
     if (block && block->type == MMD_TYPE_CODE_BLOCK)
     {
-      mmd_add(block, MMD_TYPE_CODE_TEXT, 0, line, NULL);
+      mmd_add(block, MMD_TYPE_CODE_TEXT, 0, line.buffer, NULL);
       continue;
     }
     else if (!strncmp(lineptr, "---", 3) && doc.root->first_child == NULL)
@@ -538,14 +545,12 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
       block = mmd_add(doc.root, MMD_TYPE_METADATA, 0, NULL, NULL);
 
-      while (mmd_read_line(fp, line, sizeof(line)))
+      while ((lineptr = mmd_read_line(&line, 0)) != NULL)
       {
-        lineptr = line;
-
         while (isspace(*lineptr & 255))
           lineptr ++;
 
-        if (!strncmp(line, "---", 3) || !strncmp(line, "...", 3))
+        if (!strncmp(lineptr, "---", 3) || !strncmp(lineptr, "...", 3))
           break;
 
         lineend = lineptr + strlen(lineptr) - 1;
@@ -681,7 +686,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
           else
             cell = mmd_add(row, columns[col], 0, NULL, NULL);
 
-          mmd_parse_inline(&doc, cell, start);
+          mmd_parse_inline(&doc, cell, NULL, start);
         }
         else
         {
@@ -873,7 +878,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
     {
       type = MMD_TYPE_PARAGRAPH;
 
-      if (lineptr == line)
+      if (lineptr == line.buffer)
         current = doc.root;
     }
     else
@@ -887,7 +892,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       block = mmd_add(current, type, 0, NULL, NULL);
     }
 
-    mmd_parse_inline(&doc, block, lineptr);
+    mmd_parse_inline(&doc, block, &line, lineptr);
   }
 
  /*
@@ -1009,7 +1014,7 @@ mmd_is_table(FILE *fp)			/* I - File to read from */
 
   pos = ftell(fp);
 
-  if (mmd_read_line(fp, line, sizeof(line)))
+  if (fgets(line, sizeof(line), fp))
   {
     for (ptr = line; *ptr; ptr ++)
     {
@@ -1033,22 +1038,23 @@ mmd_is_table(FILE *fp)			/* I - File to read from */
  */
 
 static void
-mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
-                 mmd_t      *parent,	/* I - Parent node */
-                 char       *line)	/* I - Line from file */
+mmd_parse_inline(
+    _mmd_doc_t     *doc,		/* I - Document */
+    mmd_t          *parent,		/* I - Parent node */
+    _mmd_linebuf_t *line,		/* I - Line buffer */
+    char           *lineptr)		/* I - Pointer into line */
 {
   mmd_t		*node;			/* New node */
   mmd_type_t    type;                   /* Current node type */
   int           whitespace;             /* Whitespace precedes? */
-  char          *lineptr,               /* Pointer into line */
-                *text,                  /* Text fragment in line */
+  char          *text,                  /* Text fragment in line */
                 *url,                   /* URL in link */
                 *refname;		/* Reference name */
 
 
   whitespace = parent->last_child != NULL;
 
-  for (lineptr = line, text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
+  for (text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
   {
     DEBUG_printf("mmd_parse_inline: lineptr=\"%s\"\n", lineptr);
 
@@ -1080,7 +1086,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         whitespace = 0;
       }
 
-      lineptr = mmd_parse_link(doc, lineptr + 1, &text, &url, &refname);
+      lineptr = mmd_parse_link(doc, line, lineptr + 1, &text, &url, &refname);
 
       if (url || refname)
       {
@@ -1111,7 +1117,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         whitespace = 0;
       }
 
-      lineptr = mmd_parse_link(doc, lineptr, &text, &url, &refname);
+      lineptr = mmd_parse_link(doc, line, lineptr, &text, &url, &refname);
 
       if (text && *text == '`')
       {
@@ -1266,6 +1272,13 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 
       memmove(lineptr, lineptr + 1, strlen(lineptr));
     }
+
+   /*
+    * Continue to the next line if we have styled text...
+    */
+
+    if (type != MMD_TYPE_NORMAL_TEXT && !lineptr[1] && line)
+      mmd_read_line(line, 1);
   }
 
   if (text)
@@ -1278,11 +1291,12 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
  */
 
 static char *				/* O - End of link text */
-mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
-               char       *lineptr,	/* I - Pointer into line */
-               char       **text,	/* O - Text */
-               char       **url,	/* O - URL */
-               char       **refname)	/* O - Reference name */
+mmd_parse_link(_mmd_doc_t     *doc,	/* I - Document */
+               _mmd_linebuf_t *line,	/* I - Line buffer */
+               char           *lineptr,	/* I - Pointer into line */
+               char           **text,	/* O - Text */
+               char           **url,	/* O - URL */
+               char           **refname)/* O - Reference name */
 {
   lineptr ++; /* skip "[" */
 
@@ -1296,13 +1310,21 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
     {
       lineptr ++;
       while (*lineptr && *lineptr != '\"')
+      {
         lineptr ++;
+
+        if (!*lineptr && line)
+          mmd_read_line(line, 1);
+      }
 
       if (!*lineptr)
         return (lineptr);
     }
 
     lineptr ++;
+
+    if (!*lineptr && line)
+      mmd_read_line(line, 1);
   }
 
   if (!*lineptr)
@@ -1330,13 +1352,21 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
       {
         lineptr ++;
         while (*lineptr && *lineptr != '\"')
+        {
           lineptr ++;
+
+	  if (!*lineptr && line)
+	    mmd_read_line(line, 1);
+	}
 
         if (!*lineptr)
           return (lineptr);
       }
 
       lineptr ++;
+
+      if (!*lineptr && line)
+	mmd_read_line(line, 1);
     }
 
     *lineptr++ = '\0';
@@ -1358,13 +1388,21 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
       {
         lineptr ++;
         while (*lineptr && *lineptr != '\"')
+        {
           lineptr ++;
+
+	  if (!*lineptr && line)
+	    mmd_read_line(line, 1);
+	}
 
         if (!*lineptr)
           return (lineptr);
       }
 
       lineptr ++;
+
+      if (!*lineptr && line)
+	mmd_read_line(line, 1);
     }
 
     *lineptr++ = '\0';
@@ -1379,7 +1417,12 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
 
     lineptr ++;
     while (*lineptr && isspace(*lineptr & 255))
+    {
       lineptr ++;
+
+      if (!*lineptr && line)
+	mmd_read_line(line, 1);
+    }
 
     *url = lineptr;
 
@@ -1403,11 +1446,25 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
  */
 
 static char *				/* O - Pointer to line or `NULL` on EOF */
-mmd_read_line(FILE   *fp,		/* I - File */
-              char   *line,		/* I - Line buffer */
-              size_t linesize)		/* I - Size of line buffer */
+mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
+              int            append)	/* I - Append to the buffer? */
 {
-  return (fgets(line, linesize, fp));
+  if (append)
+  {
+    if (line->bufptr > line->buffer && line->bufptr < (line->buffer + sizeof(line->buffer) - 1))
+      *(line->bufptr)++ = ' ';
+  }
+  else
+    line->bufptr = line->buffer;
+
+  *(line->bufptr) = '\0';
+
+  if (!fgets(line->bufptr, sizeof(line->buffer) - (line->bufptr - line->buffer), line->fp))
+    return (NULL);
+
+  line->bufptr += strlen(line->bufptr);
+
+  return (line->buffer);
 }
 
 
