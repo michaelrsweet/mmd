@@ -1050,6 +1050,8 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 
   for (lineptr = line, text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
   {
+    DEBUG_printf("mmd_parse_inline: lineptr=\"%s\"\n", lineptr);
+
     if (isspace(*lineptr & 255) && type != MMD_TYPE_CODE_TEXT)
     {
       if (text)
@@ -1142,6 +1144,8 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
       * Autolink...
       */
 
+      *lineptr++ = '\0';
+
       if (text)
       {
         mmd_add(parent, type, whitespace, text, NULL);
@@ -1150,16 +1154,14 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         whitespace = 0;
       }
 
-      url     = lineptr + 1;
-      lineptr = strchr(lineptr + 1, '>');
-
-      *lineptr++ = '\0';
+      url      = lineptr;
+      lineptr  = strchr(lineptr, '>');
+      *lineptr = '\0';
 
       mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, url, url);
 
       text = url = NULL;
       whitespace = 0;
-      lineptr --;
     }
     else if ((*lineptr == '*' || *lineptr == '_') && type != MMD_TYPE_CODE_TEXT)
     {

@@ -75,6 +75,7 @@ The following changes were made for v1.6:
 - Fixed some parsing bugs (Issue #7)
 - Fixed a crash bug in mmdutil (Issue #8)
 - Code fences using "~~~" are now supported.
+- Auto-links now properly handle preceding text (Issue #8)
 
 
 ## Changes in v1.5
