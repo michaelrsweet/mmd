@@ -1069,8 +1069,11 @@ mmd_parse_inline(
 
       whitespace = 1;
 
-      if (isspace(lineptr[1] & 255) && !lineptr[2])
+      if (!strcmp(lineptr + 1, " \n") && line)
+      {
+        DEBUG_printf("mmd_parse_inline: Adding hard break after \"%s\" to %p(%d)\n", line->buffer, parent, parent->type);
         mmd_add(parent, MMD_TYPE_HARD_BREAK, 0, NULL, NULL);
+      }
     }
     else if (*lineptr == '!' && lineptr[1] == '[' && type != MMD_TYPE_CODE_TEXT)
     {
@@ -1462,7 +1465,10 @@ mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
   if (!fgets(line->bufptr, sizeof(line->buffer) - (line->bufptr - line->buffer), line->fp))
     return (NULL);
 
-  line->bufptr += strlen(line->bufptr);
+  if (append && *(line->bufptr) == '\n' && line->bufptr > line->buffer)
+    *(line->bufptr) = '\0';
+  else
+    line->bufptr += strlen(line->bufptr);
 
   return (line->buffer);
 }

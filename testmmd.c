@@ -139,9 +139,6 @@ make_anchor(const char *text)           /* I - Text */
   static char   buffer[1024];           /* Buffer for anchor string */
 
 
-  if (!text)
-    return ("");
-
   for (bufptr = buffer; *text && bufptr < (buffer + sizeof(buffer) - 1); text ++)
   {
     if ((*text >= '0' && *text <= '9') || (*text >= 'a' && *text <= 'z') || (*text >= 'A' && *text <= 'Z') || *text == '.' || *text == '-')
