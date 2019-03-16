@@ -1335,14 +1335,22 @@ mmd_parse_link(_mmd_doc_t     *doc,	/* I - Document */
   }
 
   if (!*lineptr)
+  {
     return (lineptr);
+  }
 
   *lineptr++ = '\0';
 
-  while (isspace(*lineptr & 255))
-    lineptr ++;
+  if (isspace(*lineptr & 255))
+  {
+   /*
+    * Shortcut reference...
+    */
 
-  if (*lineptr == '(')
+    *refname = *text;
+    return (lineptr);
+  }
+  else if (*lineptr == '(')
   {
    /*
     * Get URL...

@@ -102,14 +102,16 @@ Link to [`Heading 2`](@).
 
 Implicit link to [reference1][].
 
+Shortcut link to [reference1] without a link title.
+
 [reference1]: https://michaelrsweet.github.io/mmd 'MMD Home Page'
 [reference2]: https://michaelrsweet.github.io/mmd/mmd.html 'MMD Documentation'
-[reference3]: https://michaelrsweet.github.io/mmd/mmd-160.png 'MMD Logo'
+[reference3]: https://michaelrsweet.github.io/mmd/mmd-160.png "MMD Logo"
 
-Link to [mmd web site][reference1].
-Link to [mmd documentation][reference2].
-Link to ![mmd logo][reference3].
-Link to [bad reference][reference4].
+Link to [mmd web site][reference1] works.
+Link to [mmd documentation][reference2] works.
+Link to ![mmd logo][reference3] image.
+Link to [bad reference][reference4] doesn't work.
 
 Autolink to <https://michaelrsweet.github.io/mmd>.
 
