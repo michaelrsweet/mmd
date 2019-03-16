@@ -78,6 +78,9 @@ The following changes were made for v1.6:
 - Auto-links now properly handle preceding text (Issue #8)
 - Inline styles can now span multiple lines (Issue #8)
 - Links can now span multiple lines (Issue #8)
+- Fixed some issues with inline styles being incorrectly applied for things
+  like "* *".
+
 
 ## Changes in v1.5
 

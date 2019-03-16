@@ -1189,17 +1189,21 @@ mmd_parse_inline(
 
       if (type == MMD_TYPE_NORMAL_TEXT)
       {
-        if (lineptr[1] == delim && !isspace(lineptr[2] & 255))
+        if (lineptr[1] == delim && !isspace(lineptr[2] & 255) && !ispunct(lineptr[2] & 255))
         {
           type = MMD_TYPE_STRONG_TEXT;
           lineptr ++;
+	  text = lineptr + 1;
         }
-        else if (!isspace(lineptr[1] & 255))
+        else if (!isspace(lineptr[1] & 255) && !ispunct(lineptr[1] & 255))
         {
           type = MMD_TYPE_EMPHASIZED_TEXT;
+	  text = lineptr + 1;
         }
-
-        text = lineptr + 1;
+        else
+        {
+	  text = lineptr;
+        }
       }
       else
       {
