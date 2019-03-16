@@ -82,6 +82,7 @@ The following changes were made for v1.6:
 - Fixed some issues with inline styles being incorrectly applied for things
   like "* *".
 
+
 ## Changes in v1.5
 
 The following changes were made for v1.5:

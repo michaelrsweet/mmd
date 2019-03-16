@@ -1172,7 +1172,7 @@ mmd_parse_inline(
       text = url = NULL;
       whitespace = 0;
     }
-    else if ((*lineptr == '*' || *lineptr == '_') && type != MMD_TYPE_CODE_TEXT)
+    else if ((*lineptr == '*' || *lineptr == '_') && (!text || ispunct(lineptr[-1] & 255) || type != MMD_TYPE_NORMAL_TEXT) && type != MMD_TYPE_CODE_TEXT)
     {
       int delim = *lineptr;		/* Delimiter */
 
@@ -1464,6 +1464,13 @@ static char *				/* O - Pointer to line or `NULL` on EOF */
 mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
               int            append)	/* I - Append to the buffer? */
 {
+  int	ch,				/* Current character */
+	column = 0;			/* Current column */
+  char	*lineptr,			/* Pointer into line */
+	*lineend = line->buffer + sizeof(line->buffer) - 1;
+					/* Pointer to end of buffer */
+
+
   if (append)
   {
     if (line->bufptr > line->buffer && line->bufptr < (line->buffer + sizeof(line->buffer) - 1))
@@ -1472,15 +1479,44 @@ mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
   else
     line->bufptr = line->buffer;
 
-  *(line->bufptr) = '\0';
+  lineptr = line->bufptr;
 
-  if (!fgets(line->bufptr, sizeof(line->buffer) - (line->bufptr - line->buffer), line->fp))
+  while ((ch = getc(line->fp)) != EOF)
+  {
+    if (ch == '\t')
+    {
+     /*
+      * Expand tabs since nobody uses the same tab width and Markdown says
+      * 4 columns per tab...
+      */
+
+      int nextcol = (column + 4) & ~3;	/* Next column */
+
+      while (column < nextcol && lineptr < lineend)
+      {
+        column ++;
+        *lineptr++ = ' ';
+      }
+    }
+    else if (ch != '\r' && lineptr < lineend)
+    {
+      column ++;
+      *lineptr++ = ch;
+    }
+
+    if (ch == '\n')
+      break;
+  }
+
+  *lineptr = '\0';
+
+  line->bufptr = lineptr;
+
+  if (ch == EOF && lineptr == line->buffer)
     return (NULL);
 
-  if (append && *(line->bufptr) == '\n' && line->bufptr > line->buffer)
-    *(line->bufptr) = '\0';
-  else
-    line->bufptr += strlen(line->bufptr);
+//  if (append && line->bufptr > line->buffer && line->bufptr[-1] == '\n')
+//    *(line->bufptr) = '\0';
 
   return (line->buffer);
 }

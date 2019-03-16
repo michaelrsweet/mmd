@@ -28,10 +28,11 @@
  * Local functions...
  */
 
-static const char *make_anchor(const char *text);
-static void       write_block(mmd_t *parent);
-static void       write_html(const char *s);
-static void       write_leaf(mmd_t *node);
+static const char	*make_anchor(const char *text);
+static void		usage(void);
+static void		write_block(mmd_t *parent);
+static void		write_html(const char *s);
+static void		write_leaf(mmd_t *node);
 
 
 /*
@@ -42,19 +43,53 @@ int					/* O - Exit status */
 main(int  argc,				/* I - Number of command-line arguments */
      char *argv[])			/* I - Command-line arguments */
 {
+  int		i;			/* Looping var */
+  const char	*filename = NULL;	/* File to load */
   mmd_t         *doc;                   /* Document */
   const char    *title;                 /* Title */
 
 
-  if (argc != 2)
+  for (i = 1; i < argc; i ++)
   {
-    puts("Usage: ./testmmd filename.md > filename.html");
-    return (1);
+    if (!strcmp(argv[i], "--help"))
+    {
+      usage();
+      return (0);
+    }
+    else if (!strcmp(argv[i], "-o"))
+    {
+      i ++;
+      if (i >= argc)
+      {
+        usage();
+        return (1);
+      }
+
+      freopen(argv[i], "w", stdout);
+    }
+    else if (argv[i][0] == '-')
+    {
+      printf("Unknown option '%s'.\n", argv[i]);
+      usage();
+      return (1);
+    }
+    else if (filename)
+    {
+      usage();
+      return (1);
+    }
+    else
+      filename = argv[i];
   }
 
-  if ((doc = mmdLoad(argv[1])) == NULL)
+  if (filename)
+    doc = mmdLoad(filename);
+  else
+    doc = mmdLoadFile(stdin);
+
+  if (!doc)
   {
-    perror(argv[1]);
+    perror(filename ? filename : "(stdin)");
     return (1);
   }
 
@@ -62,11 +97,11 @@ main(int  argc,				/* I - Number of command-line arguments */
 
   puts("<!DOCTYPE html>");
   puts("<html>");
-  puts("  <head>");
-  fputs("    <title>", stdout);
+  puts("<head>");
+  fputs("<title>", stdout);
   write_html(title ? title : "Unknown");
   puts("</title>");
-  puts("  <style><!--");
+  puts("<style><!--");
   puts("body {");
   puts("  font-family: sans-serif;");
   puts("  font-size: 18px;");
@@ -77,7 +112,6 @@ main(int  argc,				/* I - Number of command-line arguments */
   puts("}");
   puts("pre, li code, p code {");
   puts("  font-family: monospace;");
-  puts("  font-size: 14px;");
   puts("}");
   puts("pre {");
   puts("  background: #f8f8f8;");
@@ -114,12 +148,12 @@ main(int  argc,				/* I - Number of command-line arguments */
   puts("  text-align: center;");
   puts("}");
   puts("--></style>");
-  puts("  </head>");
-  puts("  <body>");
+  puts("</head>");
+  puts("<body>");
 
   write_block(doc);
 
-  puts("  </body>");
+  puts("</body>");
   puts("</html>");
 
   mmdFree(doc);
@@ -150,6 +184,20 @@ make_anchor(const char *text)           /* I - Text */
   *bufptr = '\0';
 
   return (buffer);
+}
+
+
+/*
+ * 'usage()' - Show usage...
+ */
+
+static void
+usage(void)
+{
+  puts("Usage: ./testmmd [options] [filename.md] > filename.html");
+  puts("Options:");
+  puts("--help            Show help");
+  puts("-o filename.html  Send output to file instead of stdout");
 }
 
 
@@ -213,14 +261,14 @@ write_block(mmd_t *parent)              /* I - Parent node */
         break;
 
     case MMD_TYPE_CODE_BLOCK :
-        fputs("    <pre><code>", stdout);
+        fputs("<pre><code>", stdout);
         for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
           write_html(mmdGetText(node));
         puts("</code></pre>");
         return;
 
     case MMD_TYPE_THEMATIC_BREAK :
-        puts("    <hr />");
+        puts("<hr>");
         return;
 
     case MMD_TYPE_TABLE :
@@ -268,7 +316,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
     * Add an anchor for each heading...
     */
 
-    printf("    <%s id=\"", element);
+    printf("<%s id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
     {
       if (mmdGetWhitespace(node))
@@ -279,7 +327,7 @@ write_block(mmd_t *parent)              /* I - Parent node */
     fputs("\">", stdout);
   }
   else if (element)
-    printf("    <%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
+    printf("<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {
@@ -371,11 +419,11 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
         return;
 
     case MMD_TYPE_HARD_BREAK :
-        puts("<br />");
+        puts("<br>");
         return;
 
     case MMD_TYPE_SOFT_BREAK :
-        puts("<wbr />");
+        puts("<wbr>");
         return;
 
     case MMD_TYPE_METADATA_TEXT :
@@ -397,14 +445,7 @@ write_leaf(mmd_t *node)                 /* I - Leaf node */
   if (element)
     printf("<%s>", element);
 
-  if (!strcmp(text, "(c)"))
-    fputs("&copy;", stdout);
-  else if (!strcmp(text, "(r)"))
-    fputs("&reg;", stdout);
-  else if (!strcmp(text, "(tm)"))
-    fputs("&trade;", stdout);
-  else
-    write_html(text);
+  write_html(text);
 
   if (element)
     printf("</%s>", element);
