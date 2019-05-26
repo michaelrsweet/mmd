@@ -44,6 +44,7 @@ main(int  argc,				/* I - Number of command-line arguments */
      char *argv[])			/* I - Command-line arguments */
 {
   int		i;			/* Looping var */
+  int   only_body = 0;  /* Whether to output just the <body> contents. */
   const char	*filename = NULL;	/* File to load */
   mmd_t         *doc;                   /* Document */
   const char    *title;                 /* Title */
@@ -66,6 +67,10 @@ main(int  argc,				/* I - Number of command-line arguments */
       }
 
       freopen(argv[i], "w", stdout);
+    }
+    else if (!strcmp(argv[i], "--only-body"))
+    {
+      only_body = 1;
     }
     else if (argv[i][0] == '-')
     {
@@ -95,66 +100,72 @@ main(int  argc,				/* I - Number of command-line arguments */
 
   title = mmdGetMetadata(doc, "title");
 
-  puts("<!DOCTYPE html>");
-  puts("<html>");
-  puts("<head>");
-  fputs("<title>", stdout);
-  write_html(title ? title : "Unknown");
-  puts("</title>");
-  puts("<style><!--");
-  puts("body {");
-  puts("  font-family: sans-serif;");
-  puts("  font-size: 18px;");
-  puts("  line-height: 150%;");
-  puts("}");
-  puts("a {");
-  puts("  font: inherit;");
-  puts("}");
-  puts("pre, li code, p code {");
-  puts("  font-family: monospace;");
-  puts("}");
-  puts("pre {");
-  puts("  background: #f8f8f8;");
-  puts("  border: solid thin #666;");
-  puts("  line-height: 120%;");
-  puts("  padding: 10px;");
-  puts("}");
-  puts("li code, p code {");
-  puts("  padding: 2px 5px;");
-  puts("}");
-  puts("table {");
-  puts("  border: solid thin #999;");
-  puts("  border-collapse: collapse;");
-  puts("  border-spacing: 0;");
-  puts("}");
-  puts("td {");
-  puts("  border: solid thin #ccc;");
-  puts("  padding-top: 5px;");
-  puts("}");
-  puts("td.left {");
-  puts("  text-align: left;");
-  puts("}");
-  puts("td.center {");
-  puts("  text-align: center;");
-  puts("}");
-  puts("td.right {");
-  puts("  text-align: right;");
-  puts("}");
-  puts("th {");
-  puts("  background: #ccc;");
-  puts("  border: none;");
-  puts("  border-bottom: solid thin #999;");
-  puts("  padding: 1px 5px;");
-  puts("  text-align: center;");
-  puts("}");
-  puts("--></style>");
-  puts("</head>");
-  puts("<body>");
+  if (!only_body)
+  {
+    puts("<!DOCTYPE html>");
+    puts("<html>");
+    puts("<head>");
+    fputs("<title>", stdout);
+    write_html(title ? title : "Unknown");
+    puts("</title>");
+    puts("<style><!--");
+    puts("body {");
+    puts("  font-family: sans-serif;");
+    puts("  font-size: 18px;");
+    puts("  line-height: 150%;");
+    puts("}");
+    puts("a {");
+    puts("  font: inherit;");
+    puts("}");
+    puts("pre, li code, p code {");
+    puts("  font-family: monospace;");
+    puts("}");
+    puts("pre {");
+    puts("  background: #f8f8f8;");
+    puts("  border: solid thin #666;");
+    puts("  line-height: 120%;");
+    puts("  padding: 10px;");
+    puts("}");
+    puts("li code, p code {");
+    puts("  padding: 2px 5px;");
+    puts("}");
+    puts("table {");
+    puts("  border: solid thin #999;");
+    puts("  border-collapse: collapse;");
+    puts("  border-spacing: 0;");
+    puts("}");
+    puts("td {");
+    puts("  border: solid thin #ccc;");
+    puts("  padding-top: 5px;");
+    puts("}");
+    puts("td.left {");
+    puts("  text-align: left;");
+    puts("}");
+    puts("td.center {");
+    puts("  text-align: center;");
+    puts("}");
+    puts("td.right {");
+    puts("  text-align: right;");
+    puts("}");
+    puts("th {");
+    puts("  background: #ccc;");
+    puts("  border: none;");
+    puts("  border-bottom: solid thin #999;");
+    puts("  padding: 1px 5px;");
+    puts("  text-align: center;");
+    puts("}");
+    puts("--></style>");
+    puts("</head>");
+    puts("<body>");
+  }
 
   write_block(doc);
 
-  puts("</body>");
-  puts("</html>");
+  if (!only_body)
+  {
+    puts("</body>");
+    puts("</html>");
+  }
 
   mmdFree(doc);
 
