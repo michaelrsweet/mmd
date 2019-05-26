@@ -44,7 +44,7 @@ main(int  argc,				/* I - Number of command-line arguments */
      char *argv[])			/* I - Command-line arguments */
 {
   int		i;			/* Looping var */
-  int   only_body = 0;  /* Whether to output just the <body> contents. */
+  int		only_body = 0;		/* Only output body content? */
   const char	*filename = NULL;	/* File to load */
   mmd_t         *doc;                   /* Document */
   const char    *title;                 /* Title */
@@ -57,6 +57,10 @@ main(int  argc,				/* I - Number of command-line arguments */
       usage();
       return (0);
     }
+    else if (!strcmp(argv[i], "--only-body"))
+    {
+      only_body = 1;
+    }
     else if (!strcmp(argv[i], "-o"))
     {
       i ++;
@@ -67,10 +71,6 @@ main(int  argc,				/* I - Number of command-line arguments */
       }
 
       freopen(argv[i], "w", stdout);
-    }
-    else if (!strcmp(argv[i], "--only-body"))
-    {
-      only_body = 1;
     }
     else if (argv[i][0] == '-')
     {
@@ -208,6 +208,7 @@ usage(void)
   puts("Usage: ./testmmd [options] [filename.md] > filename.html");
   puts("Options:");
   puts("--help            Show help");
+  puts("--only-body       Only output body content");
   puts("-o filename.html  Send output to file instead of stdout");
 }
 
