@@ -37,6 +37,10 @@ install:	mmdutil
 	mkdir -p $(mandir)/man1
 	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
 
+sanitizer:
+	$(MAKE) clean
+	$(MAKE) OPTIM="-g -fsanitize=address" all
+
 mmdutil:	mmd.o mmdutil.o
 	$(CC) $(LDFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
 
