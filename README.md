@@ -8,6 +8,9 @@ version of markdown syntax with the following exceptions:
   the reason for this is to better support different kinds of output from the
   markdown "source", including XHTML, man, and `xml2rfc`.
 
+- Tabs are silently expanded to the markdown standard of four spaces since HTML
+  uses eight spaces per tab.
+
 - Link titles are silently ignored.
 
 - Thematic breaks using a mix of whitespace and the separator character are not
@@ -81,6 +84,8 @@ The following changes were made for v1.6:
 - Shortcut links (`[reference]`) didn't work (Issue #8)
 - Fixed some issues with inline styles being incorrectly applied for things
   like "* *".
+- The `testmmd` program now supports running tests from the CommonMark
+  specification and/or from the CommonMark test suite (Issue #9)
 
 
 ## Changes in v1.5
