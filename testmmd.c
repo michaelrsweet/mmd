@@ -624,7 +624,7 @@ write_block(FILE  *fp,			/* I - Output file */
     fputs("\">", fp);
   }
   else if (element)
-    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_UNORDERED_LIST ? "\n" : "");
+    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_LIST_ITEM ? "\n" : "");
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {

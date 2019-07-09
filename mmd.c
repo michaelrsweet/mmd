@@ -786,8 +786,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       else if (current->type != MMD_TYPE_UNORDERED_LIST)
         current = mmd_add(current->type == MMD_TYPE_BLOCK_QUOTE ? current : doc.root, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
 
-      type  = MMD_TYPE_LIST_ITEM;
-      block = NULL;
+      current = mmd_add(current, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
+      type    = MMD_TYPE_PARAGRAPH;
+      block   = NULL;
     }
     else if (isdigit(*lineptr & 255))
     {
@@ -815,8 +816,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         else if (current->type != MMD_TYPE_ORDERED_LIST)
           current = mmd_add(current, MMD_TYPE_ORDERED_LIST, 0, NULL, NULL);
 
-        type  = MMD_TYPE_LIST_ITEM;
-        block = NULL;
+        current = mmd_add(current, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
+        type    = MMD_TYPE_PARAGRAPH;
+        block   = NULL;
       }
       else
       {
