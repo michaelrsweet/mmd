@@ -37,6 +37,7 @@ static int		spec_mode = 0;	/* Output HTML according to the CommonMark spec */
 
 static void		add_spec_text(char *dst, const char *src, size_t dstsize);
 static void		indent_puts(FILE *logfile, const char *text);
+static int		is_equal(const char *a, const char *b);
 static const char	*make_anchor(const char *text);
 static int		run_spec(const char *filename, FILE *logfile);
 static void		usage(void);
@@ -263,6 +264,30 @@ indent_puts(FILE       *logfile,	/* I - Log file */
 
 
 /*
+ * 'is_equal()' - Compare two strings, allowing for whitespace differences.
+ */
+
+static int				/* O - 1 if equal, 0 if not equal */
+is_equal(const char *a,			/* I - First string */
+         const char *b)			/* I - Second string */
+{
+  while (*a && *b)
+  {
+    if (*a != *b)
+    {
+      if (!isspace(*a & 255) || !isspace(*b & 255))
+        break;
+    }
+
+    a ++;
+    b ++;
+  }
+
+  return (*a == *b);
+}
+
+
+/*
  * 'make_anchor()' - Make an anchor for internal links.
  */
 
@@ -408,16 +433,16 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         fclose(infile);
         fclose(outfile);
 
-        if (strcmp(html, outbuffer))
-        {
-          fputs("FAIL (HTML differs)\n", logfile);
-          failed ++;
-        }
-        else
+        if (is_equal(html, outbuffer))
         {
           fputs("PASS\n", logfile);
           passed ++;
           test_passed = 1;
+        }
+        else
+        {
+          fputs("FAIL (HTML differs)\n", logfile);
+          failed ++;
         }
 
         if (!test_passed)
@@ -449,7 +474,7 @@ run_spec(const char *filename,		/* I - Markdown spec file */
   if (fp != stdin)
     fclose(fp);
 
-  printf("\nSummary: %d tests, %d passed, %d skipped, %d failed\n", number, passed, skipped, failed);
+  printf("\nSummary: %d%% (%d passed, %d skipped, %d failed)\n", 100 * (passed + skipped) / number, passed, skipped, failed);
 
   return (failed != 0);
 }
@@ -540,7 +565,7 @@ write_block(FILE  *fp,			/* I - Output file */
         return;
 
     case MMD_TYPE_THEMATIC_BREAK :
-        fputs("<hr>\n", fp);
+        fputs("<hr />\n", fp);
         return;
 
     case MMD_TYPE_TABLE :
@@ -693,11 +718,11 @@ write_leaf(FILE  *fp,			/* I - Output file */
         return;
 
     case MMD_TYPE_HARD_BREAK :
-        fputs("<br>\n", fp);
+        fputs("<br />\n", fp);
         return;
 
     case MMD_TYPE_SOFT_BREAK :
-        fputs("<wbr>\n", fp);
+        fputs("<wbr />\n", fp);
         return;
 
     case MMD_TYPE_METADATA_TEXT :
