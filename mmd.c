@@ -14,13 +14,20 @@
  */
 
 #define DEBUG 0
-#if DEBUG
+#if DEBUG > 0
 #  define DEBUG_printf(...)	fprintf(stderr, __VA_ARGS__)
 #  define DEBUG_puts(s)		fputs(s, stderr);
 #else
 #  define DEBUG_printf(...)
 #  define DEBUG_puts(s)
-#endif /* DEBUG */
+#endif /* DEBUG > 0 */
+#if DEBUG > 1
+#  define DEBUG2_printf(...)	fprintf(stderr, __VA_ARGS__)
+#  define DEBUG2_puts(s)	fputs(s, stderr);
+#else
+#  define DEBUG2_printf(...)
+#  define DEBUG2_puts(s)
+#endif /* DEBUG > 1 */
 
 
 /*
@@ -103,6 +110,13 @@ typedef struct _mmd_doc_s		/**** Markdown document ****/
   _mmd_ref_t	*references;		/* References */
 } _mmd_doc_t;
 
+typedef struct _mmd_stack_s		/**** Markdown block stack ****/
+{
+  mmd_t		*parent;		/* Parent node */
+  int		indent;			/* Indentation */
+  char		fence;			/* Code fence character */
+} _mmd_stack_t;
+
 
 /*
  * Local functions...
@@ -111,6 +125,7 @@ typedef struct _mmd_doc_s		/**** Markdown document ****/
 
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
+static int	mmd_is_char(const char *lineptr, int ch, int minchars);
 static int	mmd_is_table(FILE *fp);
 static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, _mmd_linebuf_t *line, char *lineptr);
 static char     *mmd_parse_link(_mmd_doc_t *doc, _mmd_linebuf_t *line, char *lineptr, char **text, char **url, char **refname);
@@ -446,17 +461,20 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   size_t	i;			/* Looping var */
   _mmd_doc_t	doc;			/* Document */
   _mmd_ref_t	*reference;		/* Current reference */
-  mmd_t         *current,               /* Current parent block */
-                *block = NULL;          /* Current block */
+  mmd_t         *block = NULL;          /* Current block */
   mmd_type_t    type;                   /* Type for line */
   _mmd_linebuf_t line;			/* Line buffer */
-  char		*lineptr,               /* Pointer into line */
-		*lineend;               /* End of line */
+  char		*linestart,		/* Start of line */
+		*lineptr,               /* Pointer into line */
+		*lineend,               /* End of line */
+		*temp;			/* Temporary pointer */
+  int		newindent;		/* New indentation */
   int           blank_code = 0;         /* Saved indented blank code line */
   mmd_type_t	columns[256];		/* Alignment of table columns */
   int		num_columns = 0,	/* Number of columns in table */
 		rows = 0;		/* Number of rows in table */
-  char		fence = '\0';		/* Code fence character */
+  _mmd_stack_t	stack[32],		/* Block stack */
+		*stackptr = stack;	/* Pointer to top of stack */
 
 
  /*
@@ -465,13 +483,20 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
   memset(&doc, 0, sizeof(doc));
 
-  doc.root = current = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
+  doc.root = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
 
   if (!doc.root)
   {
     fclose(fp);
     return (NULL);
   }
+
+ /*
+  * Initialize the block stack...
+  */
+
+  memset(stack, 0, sizeof(stack));
+  stackptr->parent = doc.root;
 
  /*
   * Read lines until end-of-file...
@@ -481,60 +506,74 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
   while ((lineptr = mmd_read_line(&line, 0)) != NULL)
   {
+    DEBUG_printf("%03d  %-12s  %s", stackptr->indent, mmd_type_string(stackptr->parent->type) + 9, line.buffer);
+
+    linestart = line.buffer;
+
     while (isspace(*lineptr & 255))
       lineptr ++;
 
-    if ((lineptr - line.buffer) >= 4 && !block && (current == doc.root || current->type == MMD_TYPE_CODE_BLOCK))
+    if (*lineptr == '>' && (lineptr - linestart) < 4)
     {
      /*
-      * Indented code block.
+      * Block quote.  See if there is an existing blockquote...
       */
 
-      if (current == doc.root)
-        current = mmd_add(doc.root, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+      if (stackptr == stack || stack[1].parent->type != MMD_TYPE_BLOCK_QUOTE)
+      {
+        block            = NULL;
+        stackptr         = stack + 1;
+        stackptr->parent = mmd_add(doc.root, MMD_TYPE_BLOCK_QUOTE, 0, NULL, NULL);
+        stackptr->indent = 2;
+        stackptr->fence  = '\0';
+      }
 
-      if (blank_code)
-        mmd_add(current, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+     /*
+      * Skip whitespace after the ">"...
+      */
 
-      mmd_add(current, MMD_TYPE_CODE_TEXT, 0, line.buffer + 4, NULL);
+      lineptr ++;
+      if (isspace(*lineptr & 255))
+        lineptr ++;
 
-      blank_code = 0;
-      continue;
+      linestart = lineptr;
+
+      while (isspace(*lineptr & 255))
+	lineptr ++;
     }
-    else if ((!fence && (!strncmp(lineptr, "```", 3) || !strncmp(lineptr, "~~~", 3))) ||
-             (fence == '`' && !strncmp(lineptr, "```", 3)) ||
-             (fence == '~' && !strncmp(lineptr, "~~~", 3)))
+    else if (*lineptr != '>' && stackptr > stack && stack[1].parent->type == MMD_TYPE_BLOCK_QUOTE)
+    {
+      block    = NULL;
+      stackptr = stack;
+    }
+
+    if ((!stackptr->fence && (!strncmp(lineptr, "```", 3) || !strncmp(lineptr, "~~~", 3))) ||
+             (stackptr->fence == '`' && !strncmp(lineptr, "```", 3)) ||
+             (stackptr->fence == '~' && !strncmp(lineptr, "~~~", 3)))
     {
      /*
       * Code fence...
       */
 
-      fence = *lineptr;
-
-      if (block)
+      if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
       {
-        if (block->type == MMD_TYPE_CODE_BLOCK)
-        {
-          DEBUG_puts("Ending code block...\n");
-          block = NULL;
-          fence = '\0';
-        }
-        else if (block->type == MMD_TYPE_LIST_ITEM)
-          block = mmd_add(block, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
-        else if (block->parent->type == MMD_TYPE_LIST_ITEM)
-          block = mmd_add(block->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
-        else
-          block = mmd_add(current, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        DEBUG2_puts("Ending code block...\n");
+        stackptr --;
       }
-      else
-        block = mmd_add(current, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
-
+      else if (stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
+      {
+        DEBUG2_printf("Starting code block with fence '%c'.\n", *lineptr);
+        block              = NULL;
+        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        stackptr[1].indent = stackptr->indent;
+        stackptr[1].fence  = *lineptr;
+        stackptr ++;
+      }
       continue;
     }
-
-    if (block && block->type == MMD_TYPE_CODE_BLOCK)
+    else if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
     {
-      mmd_add(block, MMD_TYPE_CODE_TEXT, 0, line.buffer, NULL);
+      mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
       continue;
     }
     else if (!strncmp(lineptr, "---", 3) && doc.root->first_child == NULL)
@@ -559,60 +598,242 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
         mmd_add(block, MMD_TYPE_METADATA_TEXT, 0, lineptr, NULL);
       }
-
-      block = NULL;
       continue;
     }
-    else if (!block && (!strncmp(lineptr, "---", 3) || !strncmp(lineptr, "***", 3) || !strncmp(lineptr, "___", 3)))
+    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (mmd_is_char(lineptr, '-', 1) || mmd_is_char(lineptr, '=', 1)))
     {
       int ch = *lineptr;
 
       lineptr += 3;
-      while (*lineptr && (*lineptr == ch || isspace(*lineptr & 255)))
+      while (*lineptr == ch)
+        lineptr ++;
+      while (isspace(*lineptr & 255))
         lineptr ++;
 
       if (!*lineptr)
       {
+        if (ch == '=')
+          block->type = MMD_TYPE_HEADING_1;
+        else
+          block->type = MMD_TYPE_HEADING_2;
+
         block = NULL;
-        mmd_add(current, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
         continue;
       }
-    }
 
-    if (*lineptr == '>')
+      type = MMD_TYPE_PARAGRAPH;
+    }
+    else if ((lineptr - linestart) < 4 && (mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3)))
+    {
+      if (line.buffer[0] == '>')
+        stackptr = stack + 1;
+      else
+        stackptr = stack;
+
+      mmd_add(stackptr->parent, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
+      type  = MMD_TYPE_PARAGRAPH;
+      block = NULL;
+      continue;
+    }
+    else if ((*lineptr == '-' || *lineptr == '+' || *lineptr == '*') && isspace(lineptr[1] & 255))
     {
      /*
-      * Block quote.  See if the parent of the current node is already a block
-      * quote...
+      * Bulleted list...
       */
 
-      mmd_t *node;			/* Current node */
+      lineptr   += 2;
+      linestart = lineptr;
+      newindent = linestart - line.buffer;
 
-      for (node = current; node != doc.root && node->type != MMD_TYPE_BLOCK_QUOTE; node = node->parent);
-
-      if (node == doc.root || node->type != MMD_TYPE_BLOCK_QUOTE)
-        current = mmd_add(doc.root, MMD_TYPE_BLOCK_QUOTE, 0, NULL, NULL);
-
-     /*
-      * Skip whitespace after the ">"...
-      */
-
-      lineptr ++;
       while (isspace(*lineptr & 255))
         lineptr ++;
+
+      while (stackptr > stack && stackptr->indent > newindent)
+        stackptr --;
+
+      if (stackptr->parent->type == MMD_TYPE_LIST_ITEM && stackptr->indent == newindent)
+        stackptr --;
+
+      if (stackptr->parent->type == MMD_TYPE_ORDERED_LIST && stackptr->indent == newindent)
+	stackptr --;
+
+      if (stackptr->parent->type != MMD_TYPE_UNORDERED_LIST && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
+      {
+        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
+        stackptr[1].indent = linestart - line.buffer;
+        stackptr[1].fence  = '\0';
+        stackptr ++;
+      }
+
+      if (stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
+      {
+        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
+        stackptr[1].indent = linestart - line.buffer;
+        stackptr[1].fence  = '\0';
+        stackptr ++;
+      }
+
+      type  = MMD_TYPE_PARAGRAPH;
+      block = NULL;
     }
-    else if (current->type == MMD_TYPE_BLOCK_QUOTE)
-      current = current->parent;
-    else if (current->type == MMD_TYPE_TABLE && current->parent && current->parent->type == MMD_TYPE_BLOCK_QUOTE)
-      current = current->parent->parent;
+    else if (isdigit(*lineptr & 255))
+    {
+     /*
+      * Ordered list?
+      */
+
+      temp = lineptr + 1;
+
+      while (isdigit(*temp & 255))
+        temp ++;
+
+      if (*temp == '.' && isspace(temp[1] & 255))
+      {
+       /*
+        * Yes, ordered list.
+        */
+
+        lineptr   = temp + 2;
+        linestart = lineptr;
+        newindent = linestart - line.buffer;
+
+        while (isspace(*lineptr & 255))
+          lineptr ++;
+
+	while (stackptr > stack && stackptr->indent > newindent)
+	  stackptr --;
+
+	if (stackptr->parent->type == MMD_TYPE_LIST_ITEM && stackptr->indent == newindent)
+	  stackptr --;
+
+	if (stackptr->parent->type == MMD_TYPE_UNORDERED_LIST && stackptr->indent == newindent)
+	  stackptr --;
+
+	if (stackptr->parent->type != MMD_TYPE_ORDERED_LIST && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
+	{
+	  stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_ORDERED_LIST, 0, NULL, NULL);
+	  stackptr[1].indent = linestart - line.buffer;
+	  stackptr[1].fence  = '\0';
+	  stackptr ++;
+	}
+
+	if (stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
+	{
+	  stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
+	  stackptr[1].indent = linestart - line.buffer;
+	  stackptr[1].fence  = '\0';
+	  stackptr ++;
+	}
+
+	type  = MMD_TYPE_PARAGRAPH;
+	block = NULL;
+      }
+      else
+      {
+       /*
+        * No, just a regular paragraph...
+        */
+
+        type = block ? block->type : MMD_TYPE_PARAGRAPH;
+      }
+    }
+    else if (*lineptr == '#' && (lineptr - linestart) < 4)
+    {
+     /*
+      * Heading, count the number of '#' for the heading level...
+      */
+
+      newindent = lineptr - line.buffer;
+      temp      = lineptr + 1;
+
+      while (*temp == '#')
+        temp ++;
+
+      if ((temp - lineptr) <= 6 && isspace(*temp & 255))
+      {
+       /*
+        * Heading 1-6...
+        */
+
+        type  = MMD_TYPE_HEADING_1 + (temp - lineptr - 1);
+        block = NULL;
+
+       /*
+        * Skip whitespace after "#"...
+        */
+
+        lineptr = temp;
+        while (isspace(*lineptr & 255))
+          lineptr ++;
+
+        linestart = lineptr;
+
+       /*
+        * Strip trailing "#" characters and whitespace...
+        */
+
+        temp = lineptr + strlen(lineptr) - 1;
+	while (temp > lineptr && isspace(*temp & 255))
+          *temp-- = '\0';
+        while (temp > lineptr && *temp == '#')
+          temp --;
+        if (isspace(*temp & 255))
+        {
+          while (temp > lineptr && isspace(*temp & 255))
+            *temp-- = '\0';
+        }
+        else if (temp == lineptr)
+          *temp = '\0';
+
+        block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
+      }
+      else
+      {
+       /*
+        * More than 6 #'s, just treat as a paragraph...
+        */
+
+        type = MMD_TYPE_PARAGRAPH;
+      }
+
+      while (stackptr > stack && stackptr->indent >= newindent)
+        stackptr --;
+    }
+    else if (block && block->type >= MMD_TYPE_HEADING_1 && block->type <= MMD_TYPE_HEADING_6)
+    {
+      type  = MMD_TYPE_PARAGRAPH;
+      block = NULL;
+    }
+    else if (!block)
+    {
+      type = MMD_TYPE_PARAGRAPH;
+
+      if (lineptr == line.buffer)
+        stackptr = stack;
+    }
+    else
+      type = block->type;
 
     if (!*lineptr)
     {
-      blank_code = current->type == MMD_TYPE_CODE_BLOCK;
+      blank_code = stackptr->parent->type == MMD_TYPE_CODE_BLOCK;
       block      = NULL;
       continue;
     }
-    else if (strchr(lineptr, '|') && (current->type == MMD_TYPE_TABLE || mmd_is_table(fp)))
+    else if (!strcmp(lineptr, "+"))
+    {
+      if (block)
+      {
+        if (block->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
+        else if (block->parent->type == MMD_TYPE_LIST_ITEM)
+          block = mmd_add(block->parent, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
+        else
+          block = NULL;
+      }
+      continue;
+    }
+    else if (strchr(lineptr, '|') && (stackptr->parent->type == MMD_TYPE_TABLE || mmd_is_table(fp)))
     {
      /*
       * Table...
@@ -624,17 +845,18 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       mmd_t	*row = NULL,		/* Current row */
 		*cell;			/* Current cell */
 
-      DEBUG_printf("TABLE current=%p (%d), rows=%d\n", current, current->type, rows);
+      DEBUG2_printf("TABLE current=%p (%d), rows=%d\n", current, current->type, rows);
 
-      if (current->type != MMD_TYPE_TABLE)
+      if (stackptr->parent->type != MMD_TYPE_TABLE && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
       {
-        if (current != doc.root && current->type != MMD_TYPE_BLOCK_QUOTE)
-          current = current->parent;
+        DEBUG2_printf("ADDING NEW TABLE to %p (%s)\n", stackptr->parent, mmd_type_string(stackptr->parent->type));
 
-        DEBUG_printf("ADDING NEW TABLE to %p (%d)\n", current, current->type);
+        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_TABLE, 0, NULL, NULL);
+        stackptr[1].indent = stackptr->indent;
+        stackptr[1].fence  = '\0';
+        stackptr ++;
 
-        current = mmd_add(current, MMD_TYPE_TABLE, 0, NULL, NULL);
-        block   = mmd_add(current, MMD_TYPE_TABLE_HEADER, 0, NULL, NULL);
+        block = mmd_add(stackptr->parent, MMD_TYPE_TABLE_HEADER, 0, NULL, NULL);
 
         for (col = 0; col < (int)(sizeof(columns) / sizeof(columns[0])); col ++)
           columns[col] = MMD_TYPE_TABLE_BODY_CELL_LEFT;
@@ -645,7 +867,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       else if (rows > 0)
       {
         if (rows == 1)
-          block = mmd_add(current, MMD_TYPE_TABLE_BODY, 0, NULL, NULL);
+          block = mmd_add(stackptr->parent, MMD_TYPE_TABLE_BODY, 0, NULL, NULL);
       }
       else
         block = NULL;
@@ -668,7 +890,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       for (col = 0; lineptr && *lineptr && col < (int)(sizeof(columns) / sizeof(columns[0])); col ++)
       {
        /*
-        * Get the bounds of the current cell...
+        * Get the bounds of the stackptr->parent cell...
         */
 
         start = lineptr;
@@ -704,7 +926,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
           else if (*end == ':')
             columns[col] = MMD_TYPE_TABLE_BODY_CELL_RIGHT;
 
-          DEBUG_printf("COLUMN %d SEPARATOR=\"%s\", TYPE=%d\n", col, start, columns[col]);
+          DEBUG2_printf("COLUMN %d SEPARATOR=\"%s\", TYPE=%d\n", col, start, columns[col]);
         }
       }
 
@@ -728,170 +950,41 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       rows ++;
       continue;
     }
-    else if (current->type == MMD_TYPE_TABLE)
+    else if (stackptr->parent->type == MMD_TYPE_TABLE)
     {
-      DEBUG_puts("END TABLE\n");
-      current = current->parent;
-      block   = NULL;
+      DEBUG2_puts("END TABLE\n");
+      stackptr --;
+      block = NULL;
     }
 
-    if (!strcmp(lineptr, "+"))
+    if (stackptr->parent->type != MMD_TYPE_CODE_BLOCK && (!block || block->type == MMD_TYPE_CODE_BLOCK) && (lineptr - linestart) >= (stackptr->indent + 4))
     {
-      if (block)
+     /*
+      * Indented code block.
+      */
+
+      if (stackptr->parent->type != MMD_TYPE_CODE_BLOCK && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
       {
-        if (block->type == MMD_TYPE_LIST_ITEM)
-          block = mmd_add(block, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
-        else if (block->parent->type == MMD_TYPE_LIST_ITEM)
-          block = mmd_add(block->parent, MMD_TYPE_PARAGRAPH, 0, NULL, NULL);
-        else
-          block = NULL;
+        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        stackptr[1].indent = stackptr->indent + 4;
+        stackptr ++;
       }
+
+      if (blank_code)
+        mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+
+      mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
+
+      blank_code = 0;
       continue;
     }
-    else if (block && block->type == MMD_TYPE_PARAGRAPH && (!strncmp(lineptr, "---", 3) || !strncmp(lineptr, "===", 3)))
-    {
-      int ch = *lineptr;
-
-      lineptr += 3;
-      while (*lineptr == ch)
-        lineptr ++;
-      while (isspace(*lineptr & 255))
-        lineptr ++;
-
-      if (!*lineptr)
-      {
-        if (ch == '=')
-          block->type = MMD_TYPE_HEADING_1;
-        else
-          block->type = MMD_TYPE_HEADING_2;
-
-        block = NULL;
-        continue;
-      }
-
-      type = MMD_TYPE_PARAGRAPH;
-    }
-    else if ((*lineptr == '-' || *lineptr == '+' || *lineptr == '*') && isspace(lineptr[1] & 255))
-    {
-     /*
-      * Bulleted list...
-      */
-
-      lineptr += 2;
-      while (isspace(*lineptr & 255))
-        lineptr ++;
-
-      if (current == doc.root && doc.root->last_child && doc.root->last_child->type == MMD_TYPE_UNORDERED_LIST)
-        current = doc.root->last_child;
-      else if (current->type != MMD_TYPE_UNORDERED_LIST)
-        current = mmd_add(current->type == MMD_TYPE_BLOCK_QUOTE ? current : doc.root, MMD_TYPE_UNORDERED_LIST, 0, NULL, NULL);
-
-      current = mmd_add(current, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
-      type    = MMD_TYPE_PARAGRAPH;
-      block   = NULL;
-    }
-    else if (isdigit(*lineptr & 255))
-    {
-     /*
-      * Ordered list?
-      */
-
-      char *temp = lineptr + 1;
-
-      while (isdigit(*temp & 255))
-        temp ++;
-
-      if (*temp == '.' && isspace(temp[1] & 255))
-      {
-       /*
-        * Yes, ordered list.
-        */
-
-        lineptr = temp + 2;
-        while (isspace(*lineptr & 255))
-          lineptr ++;
-
-        if (current == doc.root && doc.root->last_child && doc.root->last_child->type == MMD_TYPE_ORDERED_LIST)
-          current = doc.root->last_child;
-        else if (current->type != MMD_TYPE_ORDERED_LIST)
-          current = mmd_add(current, MMD_TYPE_ORDERED_LIST, 0, NULL, NULL);
-
-        current = mmd_add(current, MMD_TYPE_LIST_ITEM, 0, NULL, NULL);
-        type    = MMD_TYPE_PARAGRAPH;
-        block   = NULL;
-      }
-      else
-      {
-       /*
-        * No, just a regular paragraph...
-        */
-
-        type = block ? block->type : MMD_TYPE_PARAGRAPH;
-      }
-    }
-    else if (*lineptr == '#')
-    {
-     /*
-      * Heading, count the number of '#' for the heading level...
-      */
-
-      char *temp = lineptr + 1;
-
-      while (*temp == '#')
-        temp ++;
-
-      if ((temp - lineptr) <= 6)
-      {
-       /*
-        * Heading 1-6...
-        */
-
-        type  = MMD_TYPE_HEADING_1 + (temp - lineptr - 1);
-        block = NULL;
-
-       /*
-        * Skip whitespace after "#"...
-        */
-
-        lineptr = temp;
-        while (isspace(*lineptr & 255))
-          lineptr ++;
-
-       /*
-        * Strip trailing "#" characters...
-        */
-
-        for (temp = lineptr + strlen(lineptr) - 1; temp > lineptr && *temp == '#'; temp --)
-          *temp = '\0';
-      }
-      else
-      {
-       /*
-        * More than 6 #'s, just treat as a paragraph...
-        */
-
-        type = MMD_TYPE_PARAGRAPH;
-      }
-
-      if (current->type != MMD_TYPE_BLOCK_QUOTE)
-        current = doc.root;
-    }
-    else if (!block)
-    {
-      type = MMD_TYPE_PARAGRAPH;
-
-      if (lineptr == line.buffer)
-        current = doc.root;
-    }
-    else
-      type = block->type;
 
     if (!block || block->type != type)
     {
-      if (current->type == MMD_TYPE_CODE_BLOCK)
-        current = doc.root;
+      if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
+        stackptr --;
 
-      block = mmd_add(current, type, 0, NULL, NULL);
+      block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
     }
 
     mmd_parse_inline(&doc, block, &line, lineptr);
@@ -941,7 +1034,7 @@ mmd_add(mmd_t      *parent,             /* I - Parent node */
   mmd_t         *temp;                  /* New node */
 
 
-  DEBUG_printf("Adding %s to %p(%s), whitespace=%d, text=\"%s\", url=\"%s\"\n", mmd_type_string(type), parent, parent ? mmd_type_string(parent->type) : "", whitespace, text ? text : "(null)", url ? url : "(null)");
+  DEBUG2_printf("Adding %s to %p(%s), whitespace=%d, text=\"%s\", url=\"%s\"\n", mmd_type_string(type), parent, parent ? mmd_type_string(parent->type) : "", whitespace, text ? text : "(null)", url ? url : "(null)");
 
   if ((temp = calloc(1, sizeof(mmd_t))) != NULL)
   {
@@ -997,6 +1090,44 @@ mmd_free(mmd_t *node)                   /* I - Node */
     free(node->url);
 
   free(node);
+}
+
+
+/*
+ * 'mmd_is_chars()' - Determine whether a line consists solely of whitespace
+ *                    and the specified character.
+ */
+
+static int				/* O - 1 if as specified, 0 otherwise */
+mmd_is_char(const char *lineptr,	/* I - Current line */
+            int        ch,		/* I - Non-space character */
+            int        minchars)	/* I - Minimum number of non-space characters */
+{
+  int	found_ch = 0;			/* Did we find the specified character? */
+
+  while (*lineptr == ch)
+  {
+    found_ch ++;
+    lineptr ++;
+  }
+
+  if (minchars > 1)
+  {
+    while (*lineptr && (*lineptr == ch || isspace(*lineptr & 255)))
+    {
+      if (*lineptr == ch)
+	found_ch ++;
+
+      lineptr ++;
+    }
+  }
+  else
+  {
+    while (*lineptr && isspace(*lineptr & 255))
+      lineptr ++;
+  }
+
+  return (!*lineptr && found_ch >= minchars);
 }
 
 
@@ -1058,7 +1189,7 @@ mmd_parse_inline(
 
   for (text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
   {
-    DEBUG_printf("mmd_parse_inline: lineptr=\"%s\"\n", lineptr);
+    DEBUG2_printf("mmd_parse_inline: lineptr=\"%s\"\n", lineptr);
 
     if (isspace(*lineptr & 255) && type != MMD_TYPE_CODE_TEXT)
     {
@@ -1073,7 +1204,7 @@ mmd_parse_inline(
 
       if (!strcmp(lineptr + 1, " \n") && line)
       {
-        DEBUG_printf("mmd_parse_inline: Adding hard break after \"%s\" to %p(%d)\n", line->buffer, parent, parent->type);
+        DEBUG2_printf("mmd_parse_inline: Adding hard break after \"%s\" to %p(%d)\n", line->buffer, parent, parent->type);
         mmd_add(parent, MMD_TYPE_HARD_BREAK, 0, NULL, NULL);
       }
     }
@@ -1241,6 +1372,13 @@ mmd_parse_inline(
     }
     else if (*lineptr == '`')
     {
+      if (type != MMD_TYPE_CODE_TEXT && !strchr(lineptr + 1, '`'))
+      {
+        if (!text)
+          text = lineptr;
+        continue;
+      }
+
       if (text)
       {
         *lineptr = '\0';
@@ -1492,13 +1630,13 @@ mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
       * 4 columns per tab...
       */
 
-      int nextcol = (column + 4) & ~3;	/* Next column */
-
-      while (column < nextcol && lineptr < lineend)
+      do
       {
         column ++;
-        *lineptr++ = ' ';
+        if (lineptr < lineend)
+          *lineptr++ = ' ';
       }
+      while (column  & 3);
     }
     else if (ch != '\r' && lineptr < lineend)
     {

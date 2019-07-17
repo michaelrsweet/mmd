@@ -224,10 +224,21 @@ add_spec_text(char       *dst,		/* I - Destination buffer */
     }
     else
     {
-      if (*src == '<' || *src == '>')
-        in_html = *src == '<';
+      if (*src == '<')
+      {
+        in_html = 1;
+      }
+      else if (*src == '>')
+      {
+        if (in_html)
+          in_html = 0;
+        else
+          col ++;
+      }
       else if (!in_html && (!(*src & 0x80) || (*src & 0xc0) != 0x80))
+      {
         col ++;
+      }
 
       *dst++ = *src++;
     }
@@ -381,7 +392,7 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         }
         else
         {
-          add_spec_text(ptr, line, sizeof(html) - (size_t)(ptr - html));
+          add_spec_text(ptr, line, sizeof(markdown) - (size_t)(ptr - markdown));
           ptr += strlen(ptr);
         }
       }
@@ -624,7 +635,37 @@ write_block(FILE  *fp,			/* I - Output file */
     fputs("\">", fp);
   }
   else if (element)
-    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_LIST_ITEM ? "\n" : "");
+    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type < MMD_TYPE_LIST_ITEM ? "\n" : "");
+
+  if (type == MMD_TYPE_LIST_ITEM)
+  {
+    mmd_t	*first = mmdGetFirstChild(parent),
+		*second = mmdGetNextSibling(first);
+    mmd_type_t	second_type = mmdGetType(second);
+
+    if (first && mmdGetType(first) == MMD_TYPE_PARAGRAPH && (!second || (second == mmdGetLastChild(parent) && (second_type == MMD_TYPE_UNORDERED_LIST || second_type == MMD_TYPE_ORDERED_LIST))))
+    {
+      for (node = mmdGetFirstChild(first); node; node = mmdGetNextSibling(node))
+      {
+	if (mmdIsBlock(node))
+	  write_block(fp, node);
+	else
+	  write_leaf(fp, node);
+      }
+
+      if (second)
+      {
+        fputs("\n", fp);
+        write_block(fp, second);
+      }
+
+      if (element)
+	fprintf(fp, "</%s>\n", element);
+      return;
+    }
+
+    fputs("\n", fp);
+  }
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {
@@ -676,6 +717,9 @@ static void
 write_leaf(FILE  *fp,			/* I - Output file */
            mmd_t *node)                 /* I - Leaf node */
 {
+  mmd_type_t	type,			/* Current leaf node type */
+		prev_type,		/* Previous leaf node type */
+		next_type;		/* Next leaf node type */
   const char    *element,               /* Encoding element, if any */
                 *text,                  /* Text to write */
                 *url;                   /* URL to write */
@@ -687,7 +731,7 @@ write_leaf(FILE  *fp,			/* I - Output file */
   text = mmdGetText(node);
   url  = mmdGetURL(node);
 
-  switch (mmdGetType(node))
+  switch (type = mmdGetType(node))
   {
     case MMD_TYPE_EMPHASIZED_TEXT :
         element = "em";
@@ -718,7 +762,8 @@ write_leaf(FILE  *fp,			/* I - Output file */
         return;
 
     case MMD_TYPE_HARD_BREAK :
-        fputs("<br />\n", fp);
+        if (mmdGetType(mmdGetParent(node)) < MMD_TYPE_HEADING_1 || mmdGetType(mmdGetParent(node)) > MMD_TYPE_HEADING_6)
+          fputs("<br />\n", fp);
         return;
 
     case MMD_TYPE_SOFT_BREAK :
@@ -733,22 +778,35 @@ write_leaf(FILE  *fp,			/* I - Output file */
         break;
   }
 
+  prev_type = mmdGetType(mmdGetPrevSibling(node));
+  next_type = mmdGetType(mmdGetNextSibling(node));
+
   if (url)
   {
-    if (!strcmp(url, "@"))
-      fprintf(fp, "<a href=\"#%s\">", make_anchor(text));
-    else
-      fprintf(fp, "<a href=\"%s\">", url);
+    const char *prev_url = mmdGetURL(mmdGetPrevSibling(node));
+
+    if (!prev_url || strcmp(prev_url, url))
+    {
+      if (!strcmp(url, "@"))
+	fprintf(fp, "<a href=\"#%s\">", make_anchor(text));
+      else
+	fprintf(fp, "<a href=\"%s\">", url);
+    }
   }
 
-  if (element)
+  if (element && prev_type != type)
     fprintf(fp, "<%s>", element);
 
   write_html(fp, text);
 
-  if (element)
+  if (element && next_type != type)
     fprintf(fp, "</%s>", element);
 
   if (url)
-    fputs("</a>", fp);
+  {
+    const char *next_url = mmdGetURL(mmdGetNextSibling(node));
+
+    if (!next_url || strcmp(next_url, url))
+      fputs("</a>", fp);
+  }
 }
