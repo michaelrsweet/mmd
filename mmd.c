@@ -119,9 +119,16 @@ typedef struct _mmd_stack_s		/**** Markdown block stack ****/
 
 
 /*
- * Local functions...
+ * Local globals...
  */
 
+static mmd_option_t	mmd_options = MMD_OPTION_ALL;
+					/* Markdown extensions to support */
+
+
+/*
+ * Local functions...
+ */
 
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
@@ -349,6 +356,17 @@ mmdGetNextSibling(mmd_t *node)          /* I - Node */
 
 
 /*
+ * 'mmdGetOptions()' - Get the enabled markdown processing options/extensions.
+ */
+
+mmd_option_t				/* O - Enabled options */
+mmdGetOptions(void)
+{
+  return (mmd_options);
+}
+
+
+/*
  * 'mmdGetParent()' - Return the parent of a node, if any.
  */
 
@@ -541,8 +559,12 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       while (isspace(*lineptr & 255))
 	lineptr ++;
     }
-    else if (*lineptr != '>' && stackptr > stack && stack[1].parent->type == MMD_TYPE_BLOCK_QUOTE)
+    else if (*lineptr != '>' && stackptr > stack && stack[1].parent->type == MMD_TYPE_BLOCK_QUOTE && (!block || *lineptr == '\n' || mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3)))
     {
+     /*
+      * Not a lazy continuation so terminate this block quote...
+      */
+
       block    = NULL;
       stackptr = stack;
     }
@@ -571,12 +593,25 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       continue;
     }
-    else if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
+    else if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK && (lineptr - line.buffer) >= stackptr->indent)
     {
-      mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
+      if (line.buffer[stackptr->indent] == '\n')
+      {
+        blank_code ++;
+      }
+      else
+      {
+	while (blank_code > 0)
+	{
+	  mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+	  blank_code --;
+	}
+
+	mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
+      }
       continue;
     }
-    else if (!strncmp(lineptr, "---", 3) && doc.root->first_child == NULL)
+    else if (!strncmp(lineptr, "---", 3) && doc.root->first_child == NULL && (mmd_options & MMD_OPTION_METADATA))
     {
      /*
       * Document metadata...
@@ -600,7 +635,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       continue;
     }
-    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (mmd_is_char(lineptr, '-', 1) || mmd_is_char(lineptr, '=', 1)))
+    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (lineptr - linestart) >= stackptr->indent && (mmd_is_char(lineptr, '-', 1) || mmd_is_char(lineptr, '=', 1)))
     {
       int ch = *lineptr;
 
@@ -675,6 +710,12 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
       type  = MMD_TYPE_PARAGRAPH;
       block = NULL;
+
+      if (mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3))
+      {
+	mmd_add(stackptr->parent, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
+	continue;
+      }
     }
     else if (isdigit(*lineptr & 255))
     {
@@ -816,8 +857,10 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
     if (!*lineptr)
     {
-      blank_code = stackptr->parent->type == MMD_TYPE_CODE_BLOCK;
-      block      = NULL;
+      if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
+        blank_code ++;
+
+      block = NULL;
       continue;
     }
     else if (!strcmp(lineptr, "+"))
@@ -833,7 +876,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       continue;
     }
-    else if (strchr(lineptr, '|') && (stackptr->parent->type == MMD_TYPE_TABLE || mmd_is_table(fp)))
+    else if ((mmd_options & MMD_OPTION_TABLES) && strchr(lineptr, '|') && (stackptr->parent->type == MMD_TYPE_TABLE || mmd_is_table(fp)))
     {
      /*
       * Table...
@@ -845,7 +888,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       mmd_t	*row = NULL,		/* Current row */
 		*cell;			/* Current cell */
 
-      DEBUG2_printf("TABLE current=%p (%d), rows=%d\n", current, current->type, rows);
+      DEBUG2_printf("TABLE stackptr->parent=%p (%d), rows=%d\n", stackptr->parent, stackptr->parent->type, rows);
 
       if (stackptr->parent->type != MMD_TYPE_TABLE && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
       {
@@ -970,12 +1013,13 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         stackptr ++;
       }
 
-      if (blank_code)
+      while (blank_code > 0)
+      {
         mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+        blank_code --;
+      }
 
       mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
-
-      blank_code = 0;
       continue;
     }
 
@@ -1017,6 +1061,17 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   */
 
   return (doc.root);
+}
+
+
+/*
+ * 'mmdSetOptions()' - Set (enable/disable) support for various markdown options.
+ */
+
+void
+mmdSetOptions(mmd_option_t options)	/* I - Options */
+{
+  mmd_options = options;
 }
 
 
@@ -1400,7 +1455,7 @@ mmd_parse_inline(
     }
     else if (!text)
     {
-      if (*lineptr == '\\' && lineptr[1])
+      if (*lineptr == '\\' && lineptr[1] && lineptr[1] != '\n')
       {
        /*
         * Escaped character...
@@ -1411,7 +1466,7 @@ mmd_parse_inline(
 
       text = lineptr;
     }
-    else if (*lineptr == '\\' && lineptr[1])
+    else if (*lineptr == '\\' && lineptr[1] && lineptr[1] != '\n')
     {
      /*
       * Escaped character...

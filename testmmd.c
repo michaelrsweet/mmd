@@ -5,7 +5,7 @@
  *
  * Usage:
  *
- *     ./testmmd [--help] [--only-body] [--spec] [-o filename.html] filename.md
+ *     ./testmmd [--ext {all,none}] [--help] [--only-body] [--spec] [-o filename.html] filename.md
  *
  * Copyright © 2017-2019 by Michael R Sweet.
  *
@@ -36,8 +36,8 @@ static int		spec_mode = 0;	/* Output HTML according to the CommonMark spec */
  */
 
 static void		add_spec_text(char *dst, const char *src, size_t dstsize);
-static void		indent_puts(FILE *logfile, const char *text);
-static int		is_equal(const char *a, const char *b);
+static void		indent_puts(FILE *logfile, const char *text, int cursor);
+static int		is_equal(const char *generated, const char *expected, int *failed_at);
 static const char	*make_anchor(const char *text);
 static int		run_spec(const char *filename, FILE *logfile);
 static void		usage(void);
@@ -64,7 +64,30 @@ main(int  argc,				/* I - Number of command-line arguments */
 
   for (i = 1; i < argc; i ++)
   {
-    if (!strcmp(argv[i], "--help"))
+    if (!strcmp(argv[i], "--ext"))
+    {
+      i ++;
+      if (i >= argc)
+      {
+        usage();
+        return (1);
+      }
+
+      if (!strcmp(argv[i], "all"))
+      {
+        mmdSetOptions(MMD_OPTION_ALL);
+      }
+      else if (!strcmp(argv[i], "none"))
+      {
+        mmdSetOptions(MMD_OPTION_NONE);
+      }
+      else
+      {
+        usage();
+        return (1);
+      }
+    }
+    else if (!strcmp(argv[i], "--help"))
     {
       usage();
       return (0);
@@ -255,7 +278,8 @@ add_spec_text(char       *dst,		/* I - Destination buffer */
 
 static void
 indent_puts(FILE       *logfile,	/* I - Log file */
-            const char *text)		/* I - Text to write */
+            const char *text,		/* I - Text to write */
+            int        cursor)		/* I - Location for cursor or -1 if none */
 {
   const char	*start,			/* Start of line */
 		*end;			/* End of line */
@@ -270,31 +294,79 @@ indent_puts(FILE       *logfile,	/* I - Log file */
 
     fputs("        ", logfile);
     fwrite(start, end - start, 1, logfile);
+
+    if (cursor >= 0 && cursor >= (start - text) && cursor < (end - text))
+    {
+      int offset = cursor - (start - text);
+
+      fputs("        ", logfile);
+      while (offset > 0)
+      {
+        putc((offset & 1) ? ' ' : '-', logfile);
+        offset --;
+      }
+      fputs("^\n", logfile);
+    }
   }
 }
 
 
 /*
- * 'is_equal()' - Compare two strings, allowing for whitespace differences.
+ * 'is_equal()' - Compare two strings, allowing for specific differences.
  */
 
 static int				/* O - 1 if equal, 0 if not equal */
-is_equal(const char *a,			/* I - First string */
-         const char *b)			/* I - Second string */
+is_equal(const char *generated,		/* I - Generated string */
+         const char *expected,		/* I - Expected string */
+         int        *failed_at)		/* O - Where the comparison failed */
 {
-  while (*a && *b)
+  const char	*gptr = generated;	/* Pointer into generated string */
+
+
+  while (*gptr && *expected)
   {
-    if (*a != *b)
+    if (*gptr != *expected)
     {
-      if (!isspace(*a & 255) || !isspace(*b & 255))
-        break;
+     /*
+      * The expected list HTML is widely inconsistent in the CommonMark
+      * specification WRT the use of paragraph (<p>) elements.  Allow for some
+      * variation as long as the visual structure is the same.
+      */
+
+      if (!strncmp(gptr, "\n<p>", 4) && *expected == gptr[4])
+      {
+        gptr += 4;
+      }
+      else if (!strncmp(gptr, "</p>", 4))
+      {
+        if (gptr[4] == '\n' && *expected == gptr[5])
+          gptr += 5;
+        else if (*expected == gptr[4])
+          gptr += 4;
+      }
+      else if (!strncmp(gptr, "p>\n</", 5) && *expected == gptr[5])
+      {
+        gptr += 5;
+      }
     }
 
-    a ++;
-    b ++;
+    if (*gptr != *expected && (!isspace(*gptr & 255) || !isspace(*expected & 255)))
+    {
+     /*
+      * If the strings don't match at this point and the difference is not in
+      * the type of whitespace used, that is an error...
+      */
+
+      break;
+    }
+
+    gptr ++;
+    expected ++;
   }
 
-  return (*a == *b);
+  *failed_at = *gptr ? (int)(gptr - generated) : -1;
+
+  return (*gptr == *expected);
 }
 
 
@@ -422,7 +494,9 @@ run_spec(const char *filename,		/* I - Markdown spec file */
 		*outfile;		/* Output file */
         char	outbuffer[4097];	/* Output buffer */
         mmd_t	*doc;			/* Markdown document */
-        int	test_passed = 0;	/* Did the test pass? */
+        int	test_passed = 0,	/* Did the test pass? */
+		failed_at = -1;		/* Offset of failure */
+
 
         infile  = fmemopen(markdown, strlen(markdown), "r");
         outfile = fmemopen(outbuffer, sizeof(outbuffer) - 1, "w");
@@ -444,7 +518,7 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         fclose(infile);
         fclose(outfile);
 
-        if (is_equal(html, outbuffer))
+        if (is_equal(outbuffer, html, &failed_at))
         {
           fputs("PASS\n", logfile);
           passed ++;
@@ -459,11 +533,11 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         if (!test_passed)
         {
           fputs("    Markdown:\n", logfile);
-          indent_puts(logfile, markdown);
+          indent_puts(logfile, markdown, -1);
           fputs("    Expected:\n", logfile);
-          indent_puts(logfile, html);
+          indent_puts(logfile, html, -1);
           fputs("    Got:\n", logfile);
-          indent_puts(logfile, outbuffer);
+          indent_puts(logfile, outbuffer, failed_at);
           fputs("\n", logfile);
         }
       }
@@ -500,6 +574,8 @@ usage(void)
 {
   puts("Usage: ./testmmd [options] [filename.md] > filename.html");
   puts("Options:");
+  puts("--ext all         Support all markdown extensions");
+  puts("--ext none        Support no markdown extensions");
   puts("--help            Show help");
   puts("--only-body       Only output body content");
   puts("--spec            Markdown file is a specification with example input and");
@@ -635,37 +711,7 @@ write_block(FILE  *fp,			/* I - Output file */
     fputs("\">", fp);
   }
   else if (element)
-    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type < MMD_TYPE_LIST_ITEM ? "\n" : "");
-
-  if (type == MMD_TYPE_LIST_ITEM)
-  {
-    mmd_t	*first = mmdGetFirstChild(parent),
-		*second = mmdGetNextSibling(first);
-    mmd_type_t	second_type = mmdGetType(second);
-
-    if (first && mmdGetType(first) == MMD_TYPE_PARAGRAPH && (!second || (second == mmdGetLastChild(parent) && (second_type == MMD_TYPE_UNORDERED_LIST || second_type == MMD_TYPE_ORDERED_LIST))))
-    {
-      for (node = mmdGetFirstChild(first); node; node = mmdGetNextSibling(node))
-      {
-	if (mmdIsBlock(node))
-	  write_block(fp, node);
-	else
-	  write_leaf(fp, node);
-      }
-
-      if (second)
-      {
-        fputs("\n", fp);
-        write_block(fp, second);
-      }
-
-      if (element)
-	fprintf(fp, "</%s>\n", element);
-      return;
-    }
-
-    fputs("\n", fp);
-  }
+    fprintf(fp, "<%s%s%s>%s", element, hclass ? " class=" : "", hclass ? hclass : "", type <= MMD_TYPE_LIST_ITEM ? "\n" : "");
 
   for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
   {

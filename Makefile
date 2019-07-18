@@ -46,9 +46,9 @@ mmdutil:	mmd.o mmdutil.o
 
 testmmd:	mmd.o testmmd.o testmmd.md
 	$(CC) $(LDFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
-	./testmmd testmmd.md >testmmd.html
+	./testmmd testmmd.md >testmmd.html 2>testmmd.log
 
 $(OBJS):	mmd.h Makefile
 
 DOCUMENTATION.html:	DOCUMENTATION.md testmmd
-	./testmmd DOCUMENTATION.md >DOCUMENTATION.html
+	./testmmd DOCUMENTATION.md >DOCUMENTATION.html 2>/dev/null
