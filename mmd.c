@@ -1238,6 +1238,8 @@ mmd_parse_inline(
   char          *text,                  /* Text fragment in line */
                 *url,                   /* URL in link */
                 *refname;		/* Reference name */
+  const char	*delim = NULL;		/* Delimiter */
+  size_t	delimlen = 0;		/* Length of delimiter */
 
 
   whitespace = parent->last_child != NULL;
@@ -1362,43 +1364,63 @@ mmd_parse_inline(
     }
     else if ((*lineptr == '*' || *lineptr == '_') && (!text || ispunct(lineptr[-1] & 255) || type != MMD_TYPE_NORMAL_TEXT) && type != MMD_TYPE_CODE_TEXT)
     {
-      int delim = *lineptr;		/* Delimiter */
+      if (type != MMD_TYPE_NORMAL_TEXT || !delim)
+      {
+	if (!strncmp(lineptr, "**", 2))
+	  delim = "**";
+	else if (!strncmp(lineptr, "__", 2))
+	  delim = "__";
+	else if (*lineptr == '*')
+	  delim = "*";
+	else
+	  delim = "_";
+
+	delimlen = strlen(delim);
+      }
+
+      if (type == MMD_TYPE_NORMAL_TEXT && delim && !strstr(lineptr + delimlen, delim))
+      {
+        if (!text)
+          text = lineptr;
+
+        delim    = NULL;
+        delimlen = 0;
+        continue;
+      }
 
       if (text)
       {
+        char save = *lineptr;
+
         *lineptr = '\0';
 
         mmd_add(parent, type, whitespace, text, NULL);
 
-        *lineptr   = (char )delim;
+        *lineptr   = save;
         text       = NULL;
         whitespace = 0;
       }
 
       if (type == MMD_TYPE_NORMAL_TEXT)
       {
-        if (lineptr[1] == delim && !isspace(lineptr[2] & 255) && !ispunct(lineptr[2] & 255))
+        if (!strncmp(lineptr, delim, delimlen) && !isspace(lineptr[delimlen] & 255))
         {
-          type = MMD_TYPE_STRONG_TEXT;
-          lineptr ++;
-	  text = lineptr + 1;
-        }
-        else if (!isspace(lineptr[1] & 255) && !ispunct(lineptr[1] & 255))
-        {
-          type = MMD_TYPE_EMPHASIZED_TEXT;
-	  text = lineptr + 1;
+          type = delimlen == 2 ? MMD_TYPE_STRONG_TEXT : MMD_TYPE_EMPHASIZED_TEXT;
+	  text = lineptr + delimlen;
+          lineptr += delimlen - 1;
         }
         else
         {
 	  text = lineptr;
         }
       }
-      else
+      else if (!strncmp(lineptr, delim, delimlen))
       {
-        if (lineptr[1] == delim)
-          lineptr ++;
-
+        lineptr += delimlen - 1;
         type = MMD_TYPE_NORMAL_TEXT;
+
+        delim    = NULL;
+        delimlen = 0;
       }
     }
     else if (lineptr[0] == '~' && lineptr[1] == '~' && type != MMD_TYPE_CODE_TEXT)
@@ -1427,10 +1449,27 @@ mmd_parse_inline(
     }
     else if (*lineptr == '`')
     {
-      if (type != MMD_TYPE_CODE_TEXT && !strchr(lineptr + 1, '`'))
+      if (type != MMD_TYPE_NORMAL_TEXT || !delim)
+      {
+        if (lineptr[1] == '`')
+        {
+          delim    = "``";
+          delimlen = 2;
+        }
+        else
+        {
+          delim    = "`";
+          delimlen = 1;
+        }
+      }
+
+      if (type != MMD_TYPE_CODE_TEXT && delim && !strstr(lineptr + delimlen, delim))
       {
         if (!text)
           text = lineptr;
+
+        delim    = NULL;
+        delimlen = 0;
         continue;
       }
 
@@ -1445,12 +1484,18 @@ mmd_parse_inline(
 
       if (type == MMD_TYPE_CODE_TEXT)
       {
-        type = MMD_TYPE_NORMAL_TEXT;
+        if (!strncmp(lineptr, delim, delimlen))
+        {
+          type     = MMD_TYPE_NORMAL_TEXT;
+          delim    = NULL;
+          delimlen = 0;
+        }
       }
       else
       {
-        type = MMD_TYPE_CODE_TEXT;
-        text = lineptr + 1;
+        type    = MMD_TYPE_CODE_TEXT;
+        lineptr += delimlen - 1;
+        text    = lineptr + 1;
       }
     }
     else if (!text)
