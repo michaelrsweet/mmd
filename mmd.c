@@ -115,6 +115,7 @@ typedef struct _mmd_stack_s		/**** Markdown block stack ****/
   mmd_t		*parent;		/* Parent node */
   int		indent;			/* Indentation */
   char		fence;			/* Code fence character */
+  size_t	fencelen;		/* Length of code fence */
 } _mmd_stack_t;
 
 
@@ -132,7 +133,7 @@ static mmd_option_t	mmd_options = MMD_OPTION_ALL;
 
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
-static int	mmd_is_char(const char *lineptr, int ch, int minchars);
+static size_t	mmd_is_chars(const char *lineptr, const char *chars, size_t minchars);
 static int	mmd_is_table(FILE *fp);
 static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, _mmd_linebuf_t *line, char *lineptr);
 static char     *mmd_parse_link(_mmd_doc_t *doc, _mmd_linebuf_t *line, char *lineptr, char **text, char **url, char **refname);
@@ -559,7 +560,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       while (isspace(*lineptr & 255))
 	lineptr ++;
     }
-    else if (*lineptr != '>' && stackptr > stack && stack[1].parent->type == MMD_TYPE_BLOCK_QUOTE && (!block || *lineptr == '\n' || mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3)))
+    else if (*lineptr != '>' && stackptr > stack && stack[1].parent->type == MMD_TYPE_BLOCK_QUOTE && (!block || *lineptr == '\n' || mmd_is_chars(lineptr, "- \t", 3) || mmd_is_chars(lineptr, "_ \t", 3) || mmd_is_chars(lineptr, "* \t", 3)))
     {
      /*
       * Not a lazy continuation so terminate this block quote...
@@ -569,13 +570,13 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       stackptr = stack;
     }
 
-    if ((!stackptr->fence && (!strncmp(lineptr, "```", 3) || !strncmp(lineptr, "~~~", 3))) ||
-             (stackptr->fence == '`' && !strncmp(lineptr, "```", 3)) ||
-             (stackptr->fence == '~' && !strncmp(lineptr, "~~~", 3)))
+    if ((lineptr - line.buffer - stackptr->indent) < 4 && ((stackptr->parent->type != MMD_TYPE_CODE_BLOCK && !stackptr->fence && (mmd_is_chars(lineptr, "`", 3) || mmd_is_chars(lineptr, "~", 3))) || (stackptr->fence == '`' && mmd_is_chars(lineptr, "`", stackptr->fencelen)) || (stackptr->fence == '~' && mmd_is_chars(lineptr, "~", stackptr->fencelen))))
     {
      /*
       * Code fence...
       */
+
+      DEBUG2_printf("stackptr->indent=%d, fence='%c', fencelen=%d\n", stackptr->indent, stackptr->fence, (int)stackptr->fencelen);
 
       if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
       {
@@ -585,10 +586,11 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       else if (stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
       {
         DEBUG2_printf("Starting code block with fence '%c'.\n", *lineptr);
-        block              = NULL;
-        stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
-        stackptr[1].indent = stackptr->indent;
-        stackptr[1].fence  = *lineptr;
+        block                = NULL;
+        stackptr[1].parent   = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
+        stackptr[1].indent   = lineptr - line.buffer;
+        stackptr[1].fence    = *lineptr;
+        stackptr[1].fencelen = mmd_is_chars(lineptr, lineptr, 3);
         stackptr ++;
       }
       continue;
@@ -608,6 +610,24 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 	}
 
 	mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line.buffer + stackptr->indent, NULL);
+      }
+      continue;
+    }
+    else if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK && stackptr->fence)
+    {
+      if (!*lineptr)
+      {
+        blank_code ++;
+      }
+      else
+      {
+	while (blank_code > 0)
+	{
+	  mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, "\n", NULL);
+	  blank_code --;
+	}
+
+	mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, lineptr, NULL);
       }
       continue;
     }
@@ -635,7 +655,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       continue;
     }
-    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (lineptr - linestart) >= stackptr->indent && (mmd_is_char(lineptr, '-', 1) || mmd_is_char(lineptr, '=', 1)))
+    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (lineptr - linestart) >= stackptr->indent && (mmd_is_chars(lineptr, "-", 1) || mmd_is_chars(lineptr, "=", 1)))
     {
       int ch = *lineptr;
 
@@ -658,7 +678,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
       type = MMD_TYPE_PARAGRAPH;
     }
-    else if ((lineptr - linestart) < 4 && (mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3)))
+    else if ((lineptr - linestart) < 4 && (mmd_is_chars(lineptr, "- \t", 3) || mmd_is_chars(lineptr, "_ \t", 3) || mmd_is_chars(lineptr, "* \t", 3)))
     {
       if (line.buffer[0] == '>')
         stackptr = stack + 1;
@@ -711,7 +731,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       type  = MMD_TYPE_PARAGRAPH;
       block = NULL;
 
-      if (mmd_is_char(lineptr, '-', 3) || mmd_is_char(lineptr, '_', 3) || mmd_is_char(lineptr, '*', 3))
+      if (mmd_is_chars(lineptr, "- \t", 3) || mmd_is_chars(lineptr, "_ \t", 3) || mmd_is_chars(lineptr, "* \t", 3))
       {
 	mmd_add(stackptr->parent, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
 	continue;
@@ -1153,14 +1173,14 @@ mmd_free(mmd_t *node)                   /* I - Node */
  *                    and the specified character.
  */
 
-static int				/* O - 1 if as specified, 0 otherwise */
-mmd_is_char(const char *lineptr,	/* I - Current line */
-            int        ch,		/* I - Non-space character */
-            int        minchars)	/* I - Minimum number of non-space characters */
+static size_t				/* O - 1 if as specified, 0 otherwise */
+mmd_is_chars(const char *lineptr,	/* I - Current line */
+             const char *chars,		/* I - Non-space character */
+             size_t     minchars)	/* I - Minimum number of non-space characters */
 {
-  int	found_ch = 0;			/* Did we find the specified character? */
+  size_t	found_ch = 0;		/* Did we find the specified characters? */
 
-  while (*lineptr == ch)
+  while (*lineptr == *chars)
   {
     found_ch ++;
     lineptr ++;
@@ -1168,21 +1188,22 @@ mmd_is_char(const char *lineptr,	/* I - Current line */
 
   if (minchars > 1)
   {
-    while (*lineptr && (*lineptr == ch || isspace(*lineptr & 255)))
+    while (*lineptr && strchr(chars, *lineptr))
     {
-      if (*lineptr == ch)
+      if (*lineptr == *chars)
 	found_ch ++;
 
       lineptr ++;
     }
   }
-  else
-  {
-    while (*lineptr && isspace(*lineptr & 255))
-      lineptr ++;
-  }
 
-  return (!*lineptr && found_ch >= minchars);
+  while (*lineptr && isspace(*lineptr & 255))
+    lineptr ++;
+
+  if (*lineptr || found_ch < minchars)
+    return (0);
+  else
+    return (found_ch);
 }
 
 
