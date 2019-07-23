@@ -88,6 +88,7 @@ extern "C" {
 
 extern char         *mmdCopyAllText(mmd_t *node);
 extern void         mmdFree(mmd_t *node);
+extern const char   *mmdGetExtra(mmd_t *node);
 extern mmd_t        *mmdGetFirstChild(mmd_t *node);
 extern mmd_t        *mmdGetLastChild(mmd_t *node);
 extern const char   *mmdGetMetadata(mmd_t *doc, const char *keyword);

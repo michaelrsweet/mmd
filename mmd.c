@@ -80,7 +80,8 @@ struct _mmd_s
   mmd_type_t    type;                   /* Node type */
   int           whitespace;             /* Leading whitespace? */
   char          *text,                  /* Text */
-                *url;                   /* Reference URL (image/link/etc.) */
+                *url,                   /* Reference URL (image/link/etc.) */
+                *extra;			/* Title, language name, etc. */
   mmd_t         *parent,                /* Parent node */
                 *first_child,           /* First child node */
                 *last_child,            /* Last child node */
@@ -134,6 +135,7 @@ static mmd_option_t	mmd_options = MMD_OPTION_ALL;
 static mmd_t    *mmd_add(mmd_t *parent, mmd_type_t type, int whitespace, char *text, char *url);
 static void     mmd_free(mmd_t *node);
 static size_t	mmd_is_chars(const char *lineptr, const char *chars, size_t minchars);
+static size_t	mmd_is_codefence(char *lineptr, char fence, size_t fencelen, char **language);
 static int	mmd_is_table(FILE *fp);
 static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, _mmd_linebuf_t *line, char *lineptr);
 static char     *mmd_parse_link(_mmd_doc_t *doc, _mmd_linebuf_t *line, char *lineptr, char **text, char **url, char **refname);
@@ -283,6 +285,18 @@ mmdFree(mmd_t *node)                    /* I - First node */
   */
 
   mmd_free(node);
+}
+
+
+/*
+ * 'mmdGetExtra()' - Get extra text (title, language, etc.) associated with a
+ *                   node.
+ */
+
+const char *				/* O - Extra text or NULL if none */
+mmdGetExtra(mmd_t *node)		/* I - Node */
+{
+  return (node ? node->extra : NULL);
 }
 
 
@@ -570,7 +584,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       stackptr = stack;
     }
 
-    if ((lineptr - line.buffer - stackptr->indent) < 4 && ((stackptr->parent->type != MMD_TYPE_CODE_BLOCK && !stackptr->fence && (mmd_is_chars(lineptr, "`", 3) || mmd_is_chars(lineptr, "~", 3))) || (stackptr->fence == '`' && mmd_is_chars(lineptr, "`", stackptr->fencelen)) || (stackptr->fence == '~' && mmd_is_chars(lineptr, "~", stackptr->fencelen))))
+    if ((lineptr - line.buffer - stackptr->indent) < 4 && ((stackptr->parent->type != MMD_TYPE_CODE_BLOCK && !stackptr->fence && mmd_is_codefence(lineptr, '\0', 0, NULL)) || (stackptr->fence && mmd_is_codefence(lineptr, stackptr->fence, stackptr->fencelen, NULL))))
     {
      /*
       * Code fence...
@@ -585,13 +599,21 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       else if (stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
       {
+        char	*language;		/* Language name, if any */
+
         DEBUG2_printf("Starting code block with fence '%c'.\n", *lineptr);
+
         block                = NULL;
         stackptr[1].parent   = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
         stackptr[1].indent   = lineptr - line.buffer;
         stackptr[1].fence    = *lineptr;
-        stackptr[1].fencelen = mmd_is_chars(lineptr, lineptr, 3);
+        stackptr[1].fencelen = mmd_is_codefence(lineptr, '\0', 0, &language);
         stackptr ++;
+
+        DEBUG2_printf("Code language=\"%s\"\n", language);
+
+        if (language)
+          stackptr->parent->extra = strdup(language);
       }
       continue;
     }
@@ -1158,12 +1180,9 @@ mmd_add(mmd_t      *parent,             /* I - Parent node */
 static void
 mmd_free(mmd_t *node)                   /* I - Node */
 {
-  if (node->text)
-    free(node->text);
-
-  if (node->url)
-    free(node->url);
-
+  free(node->text);
+  free(node->url);
+  free(node->extra);
   free(node);
 }
 
@@ -1204,6 +1223,64 @@ mmd_is_chars(const char *lineptr,	/* I - Current line */
     return (0);
   else
     return (found_ch);
+}
+
+
+/*
+ * 'mmd_is_codefence()' - Determine whether the line contains a code fence.
+ */
+
+static size_t				/* O - Length of fence or 0 otherwise */
+mmd_is_codefence(char   *lineptr,	/* I - Line */
+                 char   fence,		/* I - Current fence character, if any */
+                 size_t fencelen,	/* I - Current fence length */
+                 char   **language)	/* O - Language name, if any */
+{
+  char		match = fence;		/* Character to match */
+  size_t	len = 0;		/* Length of fence chars */
+
+
+  if (language)
+    *language = NULL;
+
+  if (!match)
+  {
+    if (*lineptr == '~' || *lineptr == '`')
+      match = *lineptr;
+    else
+      return (0);
+  }
+
+  while (*lineptr == match)
+  {
+    lineptr ++;
+    len ++;
+  }
+
+  if (len < 3 || (fencelen && len < fencelen))
+    return (0);
+
+  if (*lineptr && *lineptr != '\n' && fence)
+    return (0);
+  else if (*lineptr && !fence)
+  {
+    if (strchr(lineptr, match))
+      return (0);
+
+    while (isspace(*lineptr & 255))
+      lineptr ++;
+
+    if (*lineptr && language)
+    {
+      *language = lineptr;
+
+      while (*lineptr && !isspace(*lineptr & 255))
+        lineptr ++;
+      *lineptr = '\0';
+    }
+  }
+
+  return (len);
 }
 
 

@@ -645,7 +645,11 @@ write_block(FILE  *fp,			/* I - Output file */
         break;
 
     case MMD_TYPE_CODE_BLOCK :
-        fputs("<pre><code>", fp);
+        if ((hclass = mmdGetExtra(parent)) != NULL)
+	  fprintf(fp, "<pre><code class=\"language-%s\">", hclass);
+	else
+	  fputs("<pre><code>", fp);
+
         for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
           write_html(fp, mmdGetText(node));
         fputs("</code></pre>\n", fp);
