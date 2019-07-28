@@ -52,3 +52,6 @@ $(OBJS):	mmd.h Makefile
 
 DOCUMENTATION.html:	DOCUMENTATION.md testmmd
 	./testmmd DOCUMENTATION.md >DOCUMENTATION.html 2>/dev/null
+
+commonmark:	testmmd commonmark.md
+	./testmmd --spec commonmark.md --ext none -o commonmark.log
