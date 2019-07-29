@@ -1853,10 +1853,7 @@ mmd_read_line(_mmd_linebuf_t *line,	/* I - Line buffer */
   if (ch == EOF && lineptr == line->buffer)
     return (NULL);
 
-//  if (append && line->bufptr > line->buffer && line->bufptr[-1] == '\n')
-//    *(line->bufptr) = '\0';
-
-  return (line->buffer);
+   return (line->buffer);
 }
 
 
