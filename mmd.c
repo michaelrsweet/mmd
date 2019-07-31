@@ -1091,6 +1091,13 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
     }
 
     mmd_parse_inline(&doc, block, lineptr);
+
+    if (block->type == MMD_TYPE_PARAGRAPH && !block->first_child)
+    {
+      mmd_remove(block);
+      mmd_free(block);
+      block = NULL;
+    }
   }
 
  /*
@@ -1382,7 +1389,7 @@ mmd_is_codefence(char   *lineptr,	/* I - Line */
     return (0);
   else if (*lineptr && *lineptr != '\n' && !fence)
   {
-    if (strchr(lineptr, match))
+    if (match == '`' && strchr(lineptr, match))
       return (0);
 
     while (isspace(*lineptr & 255))
