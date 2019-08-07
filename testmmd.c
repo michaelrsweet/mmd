@@ -834,13 +834,19 @@ write_leaf(FILE  *fp,			/* I - Output file */
   if (url)
   {
     const char *prev_url = mmdGetURL(mmdGetPrevSibling(node));
+    const char *title = mmdGetExtra(node);
 
     if (!prev_url || strcmp(prev_url, url))
     {
       if (!strcmp(url, "@"))
-	fprintf(fp, "<a href=\"#%s\">", make_anchor(text));
+	fprintf(fp, "<a href=\"#%s\"", make_anchor(text));
       else
-	fprintf(fp, "<a href=\"%s\">", url);
+	fprintf(fp, "<a href=\"%s\"", url);
+
+      if (title)
+        fprintf(fp, " title=\"%s\">", title);
+      else
+        putc('>', fp);
     }
   }
 

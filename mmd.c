@@ -100,7 +100,8 @@ typedef struct _mmd_filebuf_s		/**** Buffered file ****/
 typedef struct _mmd_ref_s		/**** Reference link ****/
 {
   char		*name,			/* Name of reference */
-		*url;			/* Reference URL */
+		*url,			/* Reference URL */
+		*title;			/* Title, if any */
   size_t	num_pending;		/* Number of pending nodes */
   mmd_t		**pending;		/* Pending nodes */
 } _mmd_ref_t;
@@ -140,10 +141,10 @@ static size_t	mmd_is_chars(const char *lineptr, const char *chars, size_t mincha
 static size_t	mmd_is_codefence(char *lineptr, char fence, size_t fencelen, char **language);
 static int	mmd_is_table(_mmd_filebuf_t *file);
 static void     mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, char *lineptr);
-static char     *mmd_parse_link(_mmd_doc_t *doc, char *lineptr, char **text, char **url, char **refname);
+static char     *mmd_parse_link(_mmd_doc_t *doc, char *lineptr, char **text, char **url, char **title, char **refname);
 static void	mmd_read_buffer(_mmd_filebuf_t *file);
 static char	*mmd_read_line(_mmd_filebuf_t *file, char *line, size_t linesize);
-static void	mmd_ref_add(_mmd_doc_t *doc, mmd_t *node, const char *name, const char *url);
+static void	mmd_ref_add(_mmd_doc_t *doc, mmd_t *node, const char *name, const char *url, const char *title);
 static _mmd_ref_t *mmd_ref_find(_mmd_doc_t *doc, const char *name);
 static void     mmd_remove(mmd_t *node);
 #if DEBUG
@@ -1088,6 +1089,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
       if (!mmd_read_line(&file, ptr, sizeof(line) - (size_t)(ptr - line)))
         break;
+      else if (line[0] == '>' && *ptr == '>')
+        memmove(ptr, ptr + 1, strlen(ptr));
     }
 
     mmd_parse_inline(&doc, block, lineptr);
@@ -1445,6 +1448,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
   mmd_type_t    type;                   /* Current node type */
   int           whitespace;             /* Whitespace precedes? */
   char          *text,                  /* Text fragment in line */
+		*title,			/* Link title */
                 *url,                   /* URL in link */
                 *refname;		/* Reference name */
   const char	*delim = NULL;		/* Delimiter */
@@ -1488,14 +1492,14 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         whitespace = 0;
       }
 
-      lineptr = mmd_parse_link(doc, lineptr + 1, &text, &url, &refname);
+      lineptr = mmd_parse_link(doc, lineptr + 1, &text, &url, NULL, &refname);
 
       if (url || refname)
       {
         node = mmd_add(parent, MMD_TYPE_IMAGE, whitespace, text, url);
 
         if (refname)
-          mmd_ref_add(doc, node, refname, NULL);
+          mmd_ref_add(doc, node, refname, NULL, NULL);
       }
 
       if (!*lineptr)
@@ -1519,7 +1523,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         whitespace = 0;
       }
 
-      lineptr = mmd_parse_link(doc, lineptr, &text, &url, &refname);
+      lineptr = mmd_parse_link(doc, lineptr, &text, &url, &title, &refname);
 
       if (text && *text == '`')
       {
@@ -1532,12 +1536,16 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         node = mmd_add(parent, MMD_TYPE_CODE_TEXT, whitespace, text, url);
       }
       else if (text)
+      {
         node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+        if (title)
+          node->extra = strdup(title);
+      }
       else
         node = NULL;
 
       if (refname && node)
-        mmd_ref_add(doc, node, refname, NULL);
+        mmd_ref_add(doc, node, refname, NULL, title);
 
       if (!*lineptr)
         return;
@@ -1779,6 +1787,7 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
                char       *lineptr,	/* I - Pointer into line */
                char       **text,	/* O - Text */
                char       **url,	/* O - URL */
+               char       **title,	/* O - Title, if any */
                char       **refname)	/* O - Reference name */
 {
   lineptr ++; /* skip "[" */
@@ -1787,12 +1796,16 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
   *url     = NULL;
   *refname = NULL;
 
+  if (title)
+    *title = NULL;
+
   while (*lineptr && *lineptr != ']')
   {
-    if (*lineptr == '\"')
+    if (*lineptr == '\"' || *lineptr == '\'')
     {
-      lineptr ++;
-      while (*lineptr && *lineptr != '\"')
+      char quote = *lineptr++;
+
+      while (*lineptr && *lineptr != quote)
         lineptr ++;
 
       if (!*lineptr)
@@ -1831,14 +1844,20 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
     {
       if (isspace(*lineptr & 255))
         *lineptr = '\0';
-      else if (*lineptr == '\"')
+      else if (*lineptr == '\"' || *lineptr == '\'')
       {
-        lineptr ++;
-        while (*lineptr && *lineptr != '\"')
+        char quote = *lineptr++;
+
+        if (title)
+          *title = lineptr;
+
+        while (*lineptr && *lineptr != quote)
           lineptr ++;
 
         if (!*lineptr)
           return (lineptr);
+        else if (title)
+          *lineptr = '\0';
       }
 
       lineptr ++;
@@ -1859,14 +1878,28 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
     {
       if (isspace(*lineptr & 255))
         *lineptr = '\0';
-      else if (*lineptr == '\"')
+      else if (*lineptr == '\\' && lineptr[1])
       {
-        lineptr ++;
-        while (*lineptr && *lineptr != '\"')
+       /*
+        * Remove \
+        */
+
+        memmove(lineptr, lineptr + 1, strlen(lineptr));
+      }
+      else if (*lineptr == '\"' || *lineptr == '\'')
+      {
+        char quote = *lineptr++;
+
+        if (title)
+          *title = lineptr;
+
+        while (*lineptr && *lineptr != quote)
           lineptr ++;
 
         if (!*lineptr)
           return (lineptr);
+        else
+          *lineptr = '\0';
       }
 
       lineptr ++;
@@ -1891,12 +1924,36 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
     while (*lineptr && !isspace(*lineptr & 255))
       lineptr ++;
 
-    *lineptr = '\0';
+    if (*lineptr)
+    {
+      *lineptr++ = '\0';
+      while (*lineptr && isspace(*lineptr & 255))
+        lineptr ++;
 
-    mmd_ref_add(doc, NULL, *text, *url);
+      if (*lineptr == '\"' || *lineptr == '\'')
+      {
+        char quote = *lineptr++;
+
+        if (title)
+          *title = lineptr;
+
+        while (*lineptr && *lineptr != quote)
+          lineptr ++;
+
+        if (!*lineptr)
+          return (lineptr);
+        else
+          *lineptr = '\0';
+      }
+    }
+
+    mmd_ref_add(doc, NULL, *text, *url, title ? *title : NULL);
 
     *text = NULL;
     *url  = NULL;
+
+    if (title)
+      *title = NULL;
   }
 
   return (lineptr);
@@ -2014,7 +2071,8 @@ static void
 mmd_ref_add(_mmd_doc_t *doc,		/* I - Document */
             mmd_t      *node,		/* I - Link node, if any */
             const char *name,		/* I - Reference name */
-            const char *url)		/* I - Reference URL */
+            const char *url,		/* I - Reference URL */
+            const char *title)		/* I - Title, if any */
 {
   size_t	i;			/* Looping var */
   _mmd_ref_t	*ref = mmd_ref_find(doc, name);
@@ -2030,8 +2088,21 @@ mmd_ref_add(_mmd_doc_t *doc,		/* I - Document */
 
       ref->url = strdup(url);
 
+      if (title)
+      {
+        if (node)
+          node->extra = strdup(title);
+
+        ref->title = strdup(title);
+      }
+
       for (i = 0; i < ref->num_pending; i ++)
+      {
         ref->pending[i]->url = strdup(url);
+
+        if (title)
+          ref->pending[i]->extra = strdup(title);
+      }
 
       free(ref->pending);
 
@@ -2048,6 +2119,7 @@ mmd_ref_add(_mmd_doc_t *doc,		/* I - Document */
 
     ref->name        = strdup(name);
     ref->url         = url ? strdup(url) : NULL;
+    ref->title       = title ? strdup(title) : NULL;
     ref->num_pending = 0;
     ref->pending     = NULL;
   }
@@ -2057,9 +2129,14 @@ mmd_ref_add(_mmd_doc_t *doc,		/* I - Document */
   if (node)
   {
     if (ref->url)
-      node->url = strdup(ref->url);
+    {
+      node->url   = strdup(ref->url);
+      node->extra = ref->title ? strdup(ref->title) : NULL;
+    }
     else if ((ref->pending = realloc(ref->pending, (ref->num_pending + 1) * sizeof(mmd_t *))) != NULL)
+    {
       ref->pending[ref->num_pending ++] = node;
+    }
   }
 }
 
