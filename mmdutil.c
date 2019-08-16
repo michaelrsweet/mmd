@@ -467,14 +467,14 @@ html_block(FILE	 *outfp,		/* I - Output file */
 	break;
 
     case MMD_TYPE_CODE_BLOCK :
-	fputs("	   <pre>", outfp);
+        if ((hclass = mmdGetExtra(parent)) != NULL)
+	  fprintf(outfp, "<pre><code class=\"language-%s\">", hclass);
+	else
+	  fputs("<pre><code>", outfp);
+
 	for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
-	{
-	  fputs("<code>", outfp);
 	  html_puts(outfp, mmdGetText(node));
-	  fputs("</code>", outfp);
-	}
-	fputs("</pre>\n", outfp);
+	fputs("</code></pre>\n", outfp);
 	return;
 
     case MMD_TYPE_THEMATIC_BREAK :
@@ -782,10 +782,25 @@ html_leaf(FILE	*outfp,			/* I - Output file */
 
   if (url)
   {
-    if (!strcmp(url, "@"))
-      fprintf(outfp,  "<a href=\"#%s\">", html_anchor(text));
-    else
-      fprintf(outfp, "<a href=\"%s\">", url);
+    const char *prev_url = mmdGetURL(mmdGetPrevSibling(node));
+    const char *title = mmdGetExtra(node);
+
+    if (!prev_url || strcmp(prev_url, url))
+    {
+      if (!strcmp(url, "@"))
+	fprintf(outfp, "<a href=\"#%s\"", html_anchor(text));
+      else
+	fprintf(outfp, "<a href=\"%s\"", url);
+
+      if (title)
+      {
+        fputs(" title=\"", outfp);
+        html_puts(outfp, title);
+        fputs("\">", outfp);
+      }
+      else
+        putc('>', outfp);
+    }
   }
 
   if (element)
@@ -804,7 +819,12 @@ html_leaf(FILE	*outfp,			/* I - Output file */
     fprintf(outfp, "</%s>", element);
 
   if (url)
-    fputs("</a>", outfp);
+  {
+    const char *next_url = mmdGetURL(mmdGetNextSibling(node));
+
+    if (!next_url || strcmp(next_url, url))
+      fputs("</a>", outfp);
+  }
 }
 
 
