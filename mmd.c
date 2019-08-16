@@ -723,7 +723,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       block = NULL;
       continue;
     }
-    else if ((*lineptr == '-' || *lineptr == '+' || *lineptr == '*') && isspace(lineptr[1] & 255))
+    else if ((*lineptr == '-' || *lineptr == '+' || *lineptr == '*') && (lineptr[1] == '\t' || lineptr[1] == ' '))
     {
      /*
       * Bulleted list...
@@ -784,7 +784,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       while (isdigit(*temp & 255))
         temp ++;
 
-      if ((*temp == '.' || *temp == ')') && isspace(temp[1] & 255))
+      if ((*temp == '.' || *temp == ')') && (temp[1] == '\t' || temp[1] == ' '))
       {
        /*
         * Yes, ordered list.
