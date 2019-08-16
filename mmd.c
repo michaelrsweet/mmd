@@ -895,9 +895,6 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
         type = MMD_TYPE_PARAGRAPH;
       }
-
-//      while (stackptr > stack && stackptr->indent >= newindent)
-//        stackptr --;
     }
     else if (block && block->type >= MMD_TYPE_HEADING_1 && block->type <= MMD_TYPE_HEADING_6)
     {
@@ -1635,7 +1632,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 	delimlen = strlen(delim);
       }
 
-      if (type == MMD_TYPE_NORMAL_TEXT && delim && ((end = strstr(lineptr + delimlen, delim)) == NULL || isspace(end[-1] & 255)))
+      if (type == MMD_TYPE_NORMAL_TEXT && delim && ((end = strstr(lineptr + delimlen, delim)) == NULL || end == (lineptr + delimlen) || isspace(end[-1] & 255)))
       {
         if (!text)
           text = lineptr;
