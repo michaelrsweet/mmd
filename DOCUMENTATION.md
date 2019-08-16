@@ -166,7 +166,7 @@ The `mmdFree` function frees the memory used for the document tree:
 
 # Example: Generating HTML from Markdown
 
-One of the most common uses for Markdown is for generating HTML, and the
+One of the most common uses for markdown is for generating HTML, and the
 `testmmd` program included with `mmd` does exactly that using four functions:
 
 - [write_block - Write Block Nodes](@)
@@ -424,7 +424,11 @@ Here is the complete function:
             fprintf(fp, "<a href=\"%s\"", url);
 
           if (title)
-            fprintf(fp, " title=\"%s\">", title);
+          {
+            fputs(" title=\"", fp);
+            write_html(fp, title);
+            fputs("\">", fp);
+          }
           else
             putc('>', fp);
         }
@@ -542,7 +546,7 @@ Here is the complete function:
 
     typedef struct _mmd_s mmd_t;
 
-The `mmd_t` object represents a single node within a Markdown document.  Each
+The `mmd_t` object represents a single node within a markdown document.  Each
 node has an associated type and may have text, link, siblings, children, and
 a parent.
 
@@ -558,7 +562,7 @@ a parent.
     };
     typedef unsigned mmd_option_t;
 
-The `mmd_option_t` enumeration is a bit mask representing which Markdown
+The `mmd_option_t` enumeration is a bit mask representing which markdown
 extensions are supported by [`mmdLoad`](@) and [`mmdLoadFile`](@).
 
 
@@ -602,7 +606,7 @@ extensions are supported by [`mmdLoad`](@) and [`mmdLoadFile`](@).
       MMD_TYPE_METADATA_TEXT
     } mmd_type_t;
 
-The `mmd_type_t` enumeration represents all of the Markdown node types.
+The `mmd_type_t` enumeration represents all of the markdown node types.
 
 
 ## mmdCopyAllText
@@ -622,7 +626,7 @@ returned if there is no text under the node.
     mmdFree(mmd_t *node);
 
 The `mmdFree` function frees the specified node and all of its children.  It is
-typically only used to free the entire Markdown document, starting at the root
+typically only used to free the entire markdown document, starting at the root
 node.
 
 
@@ -738,7 +742,7 @@ node and `0` otherwise.
     int
     mmdIsBlock(mmd_t *node);
 
-The `mmdIsBlock` function returns `1` when the specified node is a Markdown
+The `mmdIsBlock` function returns `1` when the specified node is a markdown
 block and `0` otherwise.
 
 
@@ -747,11 +751,11 @@ block and `0` otherwise.
     mmd_t *
     mmdLoad(const char *filename);
 
-The `mmdLoad` function loads a Markdown document from the specified file.  The
+The `mmdLoad` function loads a markdown document from the specified file.  The
 function understands the CommonMark syntax and Jekyll metadata.
 
 The return value is a pointer to the root document node on success or `NULL` on
-failure.  Due to the nature of Markdown, the only failures are file open errors
+failure.  Due to the nature of markdown, the only failures are file open errors
 and out-of-memory conditions.
 
 
@@ -760,11 +764,11 @@ and out-of-memory conditions.
     mmd_t *
     mmdLoadFile(FILE *fp);
 
-The `mmdLoadFile` function loads a Markdown document from the specified `FILE`
+The `mmdLoadFile` function loads a markdown document from the specified `FILE`
 pointer.  The function understands the CommonMark syntax and Jekyll metadata.
 
 The return value is a pointer to the root document node on success or `NULL` on
-failure.  Due to the nature of Markdown, the only failures are out-of-memory
+failure.  Due to the nature of markdown, the only failures are out-of-memory
 conditions.
 
 
