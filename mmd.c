@@ -1619,6 +1619,8 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
     }
     else if ((*lineptr == '*' || *lineptr == '_') && (!text || ispunct(lineptr[-1] & 255) || type != MMD_TYPE_NORMAL_TEXT) && type != MMD_TYPE_CODE_TEXT)
     {
+      const char *end;			/* End delimiter */
+
       if (type != MMD_TYPE_NORMAL_TEXT || !delim)
       {
 	if (!strncmp(lineptr, "**", 2))
@@ -1633,7 +1635,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 	delimlen = strlen(delim);
       }
 
-      if (type == MMD_TYPE_NORMAL_TEXT && delim && !strstr(lineptr + delimlen, delim))
+      if (type == MMD_TYPE_NORMAL_TEXT && delim && ((end = strstr(lineptr + delimlen, delim)) == NULL || isspace(end[-1] & 255)))
       {
         if (!text)
           text = lineptr;
