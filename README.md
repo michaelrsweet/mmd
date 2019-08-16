@@ -11,11 +11,8 @@ version of markdown syntax with the following exceptions:
 - Tabs are silently expanded to the markdown standard of four spaces since HTML
   uses eight spaces per tab.
 
-- Link titles are silently ignored.
-
-- Thematic breaks using a mix of whitespace and the separator character are not
-  supported ("* * * *", "-- -- -- --", etc.); these could conceivably be added
-  but did not seem particularly important.
+- Some pathological nested link and inline style features supported by
+  CommonMark (`******Really Strong Text******`) are not supported by `mmd`.
 
 In addition, `mmd` supports a couple (otherwise undocumented) CommonMark
 extensions:
@@ -86,6 +83,12 @@ The following changes were made for v1.6:
   like "* *".
 - The `testmmd` program now supports running tests from the CommonMark
   specification and/or from the CommonMark test suite (Issue #9)
+- More CommonMark features (code languages, link titles, space-filled thematic
+  breaks) and edge cases are now supported.
+- Added new `mmdGetOptions` and `mmdSetOptions` functions to control which
+  extensions are supported.
+- Added new `mmdGetExtra` function to get the link title or code language
+  string associated with certain nodes.
 
 
 ## Changes in v1.5

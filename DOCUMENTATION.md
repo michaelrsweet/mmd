@@ -30,11 +30,11 @@ version of markdown syntax with the following exceptions:
   the reason for this is to better support different kinds of output from the
   markdown "source", including XHTML, man, and `xml2rfc`.
 
-- Link titles are silently ignored.
+- Tabs are silently expanded to the markdown standard of four spaces since HTML
+  uses eight spaces per tab.
 
-- Thematic breaks using a mix of whitespace and the separator character are not
-  supported ("* * * *", "-- -- -- --", etc.); these could conceivably be added
-  but did not seem particularly important.
+- Some pathological nested link and inline style features supported by
+  CommonMark (`******Really Strong Text******`) are not supported by `mmd`.
 
 In addition, `mmd` supports a couple (otherwise undocumented) CommonMark
 extensions:
@@ -111,6 +111,9 @@ node.  The `mmdGetWhitespace` function reports whether there was leading
 whitespace before the text fragment or image.  And the `mmdGetURL` function
 retrieves the URL associated with a `MMD_TYPE_LINKED_TEXT` or `MMD_TYPE_IMAGE`
 node.
+
+For `MMD_TYPE_CODE_BLOCK` and `MMD_TYPE_LINKED_TEXT` nodes, the `mmdGetExtra`
+function retrieves the code language or link title, respectively.
 
 
 ## Navigating the Document Tree
@@ -191,7 +194,7 @@ Here is the complete function:
     static void
     write_block(mmd_t *parent)
     {
-      const char *element;
+      const char *element, hclass = NULL;
       mmd_t *node;
       mmd_type_t type;
 
@@ -243,7 +246,11 @@ Here is the complete function:
             break;
 
         case MMD_TYPE_CODE_BLOCK :
-            fputs("    <pre><code>", stdout);
+            if ((hclass = mmdGetExtra(parent)) != NULL)
+              fprintf(fp, "<pre><code class=\"language-%s\">", hclass);
+            else
+              fputs("<pre><code>", fp);
+
             for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
               write_html(mmdGetText(node));
             puts("</code></pre>");
@@ -300,7 +307,12 @@ Here is the complete function:
 
         printf("    <%s id=\"", element);
         for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
+        {
+          if (mmdGetWhitespace(node))
+            fputc('-', fp);
+
           fputs(make_anchor(mmdGetText(node)), stdout);
+        }
         fputs("\">", stdout);
       }
       else if (element)
@@ -330,6 +342,10 @@ a space before the text.  There are three exceptions:
    the text as the alternate value.
 2. `MMD_TYPE_HARD_BREAK` - A `<br>` tag is written.
 3. `MMD_TYPE_SOFT_BREAK` - A `<wbr>` tag is written.
+
+Linked text gets some optimizations to minimize the number of `<a>` tags that
+get written, as well as using the `mmdGetExtra` function to get the link title,
+if any.
 
 In addition, some simple text substitutions are performed for "(c)", "(r)", and
 "(tm)" to use the corresponding HTML entities for copyright, registered
@@ -397,10 +413,21 @@ Here is the complete function:
 
       if (url)
       {
-        if (!strcmp(url, "@"))
-          printf("<a href=\"#%s\">", make_anchor(text));
-        else
-          printf("<a href=\"%s\">", url);
+        const char *prev_url = mmdGetURL(mmdGetPrevSibling(node));
+        const char *title = mmdGetExtra(node);
+
+        if (!prev_url || strcmp(prev_url, url))
+        {
+          if (!strcmp(url, "@"))
+            fprintf(fp, "<a href=\"#%s\"", make_anchor(text));
+          else
+            fprintf(fp, "<a href=\"%s\"", url);
+
+          if (title)
+            fprintf(fp, " title=\"%s\">", title);
+          else
+            putc('>', fp);
+        }
       }
 
       if (element)
@@ -419,7 +446,12 @@ Here is the complete function:
         printf("</%s>", element);
 
       if (url)
-        fputs("</a>", stdout);
+      {
+        const char *next_url = mmdGetURL(mmdGetNextSibling(node));
+
+        if (!next_url || strcmp(next_url, url))
+          fputs("</a>", fp);
+      }
     }
 
 
@@ -485,13 +517,16 @@ Here is the complete function:
 # Reference
 
 - [mmd_t](@)
+- [mmd_option_t](@)
 - [mmd_type_t](@)
 - [mmdCopyAllText](@)
 - [mmdFree](@)
+- [mmdGetExtra](@)
 - [mmdGetFirstChild](@)
 - [mmdGetLastChild](@)
 - [mmdGetMetadata](@)
 - [mmdGetNextSibling](@)
+- [mmdGetOptions](@)
 - [mmdGetParent](@)
 - [mmdGetPrevSibling](@)
 - [mmdGetText](@)
@@ -501,6 +536,7 @@ Here is the complete function:
 - [mmdIsBlock](@)
 - [mmdLoad](@)
 - [mmdLoadFile](@)
+- [mmdSetOptions](@)
 
 ## mmd\_t
 
@@ -509,6 +545,21 @@ Here is the complete function:
 The `mmd_t` object represents a single node within a Markdown document.  Each
 node has an associated type and may have text, link, siblings, children, and
 a parent.
+
+
+## mmd\_option\_t
+
+    enum mmd_option_e
+    {
+      MMD_OPTION_NONE = 0x00,
+      MMD_OPTION_METADATA = 0x01,
+      MMD_OPTION_TABLES = 0x02,
+      MMD_OPTION_ALL = 0x03
+    };
+    typedef unsigned mmd_option_t;
+
+The `mmd_option_t` enumeration is a bit mask representing which Markdown
+extensions are supported by [`mmdLoad`](@) and [`mmdLoadFile`](@).
 
 
 ## mmd\_type\_t
@@ -575,6 +626,16 @@ typically only used to free the entire Markdown document, starting at the root
 node.
 
 
+## mmdGetExtra
+
+    const char *
+    mmdGetExtra(mmd_t *node);
+
+The `mmdGetExtra` function returns any extra text associated with the specified
+node.  Currently this can be the code language for `MMD_TYPE_CODE_BLOCK` nodes
+and the link title for `MMD_TYPE_LINKED_TEXT` nodes.
+
+
 ## mmdGetFirstChild
 
     mmd_t *
@@ -611,6 +672,15 @@ The `mmdGetNextSibling` function returns the next sibling of the specified node,
 if any.
 
 
+## mmdGetOptions
+
+    mmd_option_t
+    mmdGetOptions(void);
+
+The `mmdGetOptions` function returns the current load options for `mmd` as an
+[enumerated bit mask](#mmd_option_t).
+
+    
 ## mmdGetParent
 
     mmd_t *
@@ -696,3 +766,21 @@ pointer.  The function understands the CommonMark syntax and Jekyll metadata.
 The return value is a pointer to the root document node on success or `NULL` on
 failure.  Due to the nature of Markdown, the only failures are out-of-memory
 conditions.
+
+
+## mmdSetOptions
+
+    void
+    mmdSetOptions(mmd_option_t options);
+
+The `mmdSetOptions` function sets the current load options for [`mmdLoad`](@)
+and [`mmdLoadFile`](@). The options are an [enumerated bit mask](#mmd_option_t)
+whose values are:
+
+- `MMD_OPTION_NONE`: No markdown extensions are enabled when loading.
+- `MMD_OPTION_METADATA`: The Jekyll metadata extension is enabled when
+  loading.
+- `MMD_OPTION_TABLES`: The Github table extension is enabled when loading.
+- `MMD_OPTION_ALL`: All supported markdown extensions are enabled when loading.
+
+The default value is `MMD_OPTION_ALL`.
