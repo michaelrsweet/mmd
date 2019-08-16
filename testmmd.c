@@ -844,7 +844,11 @@ write_leaf(FILE  *fp,			/* I - Output file */
 	fprintf(fp, "<a href=\"%s\"", url);
 
       if (title)
-        fprintf(fp, " title=\"%s\">", title);
+      {
+        fputs(" title=\"", fp);
+        write_html(fp, title);
+        fputs("\">", fp);
+      }
       else
         putc('>', fp);
     }
