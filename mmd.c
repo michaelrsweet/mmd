@@ -558,6 +558,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       * Block quote.  See if there is an existing blockquote...
       */
 
+      DEBUG_printf("     BLOCKQUOTE (stackptr=%ld)\n", stackptr - stack);
+
       if (stackptr == stack || stack[1].parent->type != MMD_TYPE_BLOCK_QUOTE)
       {
         block            = NULL;
@@ -586,6 +588,7 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       * Not a lazy continuation so terminate this block quote...
       */
 
+      DEBUG_puts("     Terminating BLOCKQUOTE\n");
       block    = NULL;
       stackptr = stack;
     }
@@ -708,6 +711,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
     }
     else if ((lineptr - linestart) < 4 && (mmd_is_chars(lineptr, "- \t", 3) || mmd_is_chars(lineptr, "_ \t", 3) || mmd_is_chars(lineptr, "* \t", 3)))
     {
+      DEBUG_puts("     THEMATIC BREAK\n");
+
       if (line[0] == '>')
         stackptr = stack + 1;
       else
@@ -738,6 +743,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         stackptr --;
 
       if (stackptr->parent->type == MMD_TYPE_ORDERED_LIST && stackptr->indent == newindent)
+	stackptr --;
+
+      if (stackptr->parent->type == MMD_TYPE_BLOCK_QUOTE && line[0] != '>')
 	stackptr --;
 
       if (stackptr->parent->type != MMD_TYPE_UNORDERED_LIST && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
@@ -797,6 +805,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
 	if (stackptr->parent->type == MMD_TYPE_UNORDERED_LIST && stackptr->indent == newindent)
 	  stackptr --;
+
+        if (stackptr->parent->type == MMD_TYPE_BLOCK_QUOTE && line[0] != '>')
+          stackptr --;
 
 	if (stackptr->parent->type != MMD_TYPE_ORDERED_LIST && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
 	{
@@ -885,8 +896,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         type = MMD_TYPE_PARAGRAPH;
       }
 
-      while (stackptr > stack && stackptr->indent >= newindent)
-        stackptr --;
+//      while (stackptr > stack && stackptr->indent >= newindent)
+//        stackptr --;
     }
     else if (block && block->type >= MMD_TYPE_HEADING_1 && block->type <= MMD_TYPE_HEADING_6)
     {
@@ -907,6 +918,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
     {
       if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
         blank_code ++;
+      else if (stackptr->parent->type == MMD_TYPE_BLOCK_QUOTE && line[0] != '>')
+        stackptr --;
 
       block = NULL;
       continue;
@@ -1111,10 +1124,18 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   {
     if (reference->pending)
     {
+      char	text[8192];		/* Reference text */
       size_t	j;			/* Looping var */
 
+      DEBUG2_printf("Clearing links for '%s'.\n", reference->name);
+      snprintf(text, sizeof(text), "[%s]", reference->name);
+
       for (j = 0; j < reference->num_pending; j ++)
-        reference->pending[j]->url = strdup(reference->name);
+      {
+        free(reference->pending[j]->text);
+        reference->pending[j]->text = strdup(text);
+        reference->pending[j]->type = MMD_TYPE_NORMAL_TEXT;
+      }
 
       free(reference->pending);
     }
@@ -1229,10 +1250,16 @@ mmd_has_continuation(
   const char	*fileptr = file->bufptr;/* Pointer into next line */
 
 
+  if (*fileptr == '\n' || *fileptr == '\r')
+    return (0);
+
   do
   {
     while (isspace(*lineptr & 255))
       lineptr ++;
+
+    if (*lineptr == '[' && (lineptr - line - indent) < 4 && (*fileptr == ' ' || *fileptr == '\t'))
+      return (1);
 
     while (isspace(*fileptr & 255))
       fileptr ++;
@@ -1243,6 +1270,9 @@ mmd_has_continuation(
       fileptr ++;
     }
     else if (*fileptr == '>')
+      return (0);
+
+    if (*fileptr == '\n' || *fileptr == '\r')
       return (0);
   }
   while (isspace(*lineptr & 255) || isspace(*fileptr & 255));
@@ -1467,15 +1497,21 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
       {
         *lineptr = '\0';
         mmd_add(parent, type, whitespace, text, NULL);
-        text = NULL;
+
+        text       = NULL;
+        whitespace = 0;
       }
 
-      whitespace = 1;
-
-      if (!strcmp(lineptr + 1, " \n"))
+      if (!strncmp(lineptr + 1, " \n", 2) && lineptr[3])
       {
         DEBUG2_printf("mmd_parse_inline: Adding hard break to %p(%d)\n", parent, parent->type);
         mmd_add(parent, MMD_TYPE_HARD_BREAK, 0, NULL, NULL);
+        lineptr += 2;
+        whitespace = 0;
+      }
+      else
+      {
+        whitespace = 1;
       }
     }
     else if (*lineptr == '!' && lineptr[1] == '[' && type != MMD_TYPE_CODE_TEXT)
@@ -1543,6 +1579,8 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
       }
       else
         node = NULL;
+
+      DEBUG2_printf("mmd_parse_inline: text=\"%s\", refname=\"%s\", node=%p\n", text, refname, node);
 
       if (refname && node)
         mmd_ref_add(doc, node, refname, NULL, title);
@@ -1816,22 +1854,11 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
   }
 
   if (!*lineptr)
-  {
     return (lineptr);
-  }
 
   *lineptr++ = '\0';
 
-  if (isspace(*lineptr & 255))
-  {
-   /*
-    * Shortcut reference...
-    */
-
-    *refname = *text;
-    return (lineptr);
-  }
-  else if (*lineptr == '(')
+  if (*lineptr == '(')
   {
    /*
     * Get URL...
@@ -1954,6 +1981,14 @@ mmd_parse_link(_mmd_doc_t *doc,		/* I - Document */
 
     if (title)
       *title = NULL;
+  }
+  else
+  {
+   /*
+    * Shortcut reference...
+    */
+
+    *refname = *text;
   }
 
   return (lineptr);
@@ -2079,8 +2114,12 @@ mmd_ref_add(_mmd_doc_t *doc,		/* I - Document */
 					/* Reference */
 
 
+  DEBUG2_printf("mmd_ref_add(doc=%p, node=%p, name=\"%s\", url=\"%s\", title=\"%s\")\n", doc, node, name, url, title);
+
   if (ref)
   {
+    DEBUG2_printf("mmd_ref_add: ref=%p, ref->url=\"%s\"\n", ref, ref->url);
+
     if (!ref->url && url)
     {
       if (node)
