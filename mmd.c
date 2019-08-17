@@ -1737,6 +1737,8 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 
       if (text)
       {
+        DEBUG2_printf("mmd_parse_inline: text=\"%s\"\n", text);
+
         if (!strncmp(lineptr, delim, delimlen))
         {
           char	*textptr = lineptr;
@@ -1750,9 +1752,10 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
         if (type == MMD_TYPE_CODE_TEXT)
         {
           if (whitespace && !*text)
+          {
             mmd_add(parent, type, 0, " ", NULL);
-
-          whitespace = 0;
+            whitespace = 0;
+          }
         }
 
         mmd_add(parent, type, whitespace, text, NULL);
@@ -1763,13 +1766,12 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 
       if (type == MMD_TYPE_CODE_TEXT)
       {
-        if (!strncmp(lineptr, delim, delimlen))
-        {
-          type     = MMD_TYPE_NORMAL_TEXT;
-          lineptr += delimlen - 1;
-          delim    = NULL;
-          delimlen = 0;
-        }
+	DEBUG2_puts("mmd_parse_inline: Reverting to normal text.\n");
+
+	type     = MMD_TYPE_NORMAL_TEXT;
+	lineptr += delimlen - 1;
+	delim    = NULL;
+	delimlen = 0;
       }
       else
       {
