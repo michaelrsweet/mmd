@@ -546,6 +546,10 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
   while ((lineptr = mmd_read_line(&file, line, sizeof(line))) != NULL)
   {
     DEBUG_printf("%03d  %-12s  %s", stackptr->indent, mmd_type_string(stackptr->parent->type) + 9, lineptr);
+#if DEBUG
+    if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
+      DEBUG2_printf("     blank_code=%d\n", blank_code);
+#endif /* DEBUG */
 
     linestart = lineptr;
 
@@ -623,6 +627,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
         if (language)
           stackptr->parent->extra = strdup(language);
+
+        blank_code = 0;
       }
       continue;
     }
@@ -1072,6 +1078,8 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         stackptr[1].parent = mmd_add(stackptr->parent, MMD_TYPE_CODE_BLOCK, 0, NULL, NULL);
         stackptr[1].indent = stackptr->indent + 4;
         stackptr ++;
+
+        blank_code = 0;
       }
 
       while (blank_code > 0)
