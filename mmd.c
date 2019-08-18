@@ -885,6 +885,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
         else if (temp == lineptr)
           *temp = '\0';
 
+	while (stackptr > stack && stackptr->indent > newindent)
+	  stackptr --;
+
         block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
       }
       else

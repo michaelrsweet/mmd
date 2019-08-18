@@ -555,10 +555,10 @@ a parent.
 
     enum mmd_option_e
     {
-      MMD_OPTION_NONE = 0x00,
-      MMD_OPTION_METADATA = 0x01,
-      MMD_OPTION_TABLES = 0x02,
-      MMD_OPTION_ALL = 0x03
+      MMD_OPTION_NONE,
+      MMD_OPTION_METADATA,
+      MMD_OPTION_TABLES,
+      MMD_OPTION_ALL
     };
     typedef unsigned mmd_option_t;
 
