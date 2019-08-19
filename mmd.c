@@ -13,7 +13,7 @@
  * Define DEBUG to get debug printf messages to stderr.
  */
 
-#define DEBUG 2
+#define DEBUG 0
 #if DEBUG > 0
 #  define DEBUG_printf(...)	fprintf(stderr, __VA_ARGS__)
 #  define DEBUG_puts(s)		fputs(s, stderr);
@@ -608,6 +608,9 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
 
     DEBUG2_printf("     stackptr=%d (%s), block=%p (%s)\n", (int)(stackptr - stack), mmd_type_string(stackptr->parent->type) + 9, block, block ? mmd_type_string(block->type) + 9 : "");
     DEBUG2_printf("     strchr(lineptr, '|')=%p, mmd_is_table(&file, stackptr->indent)=%d\n", strchr(lineptr, '|'), mmd_is_table(&file, stackptr->indent));
+    DEBUG2_printf("     linestart=%d, lineptr=%d\n", (int)(linestart - line), (int)(lineptr - line));
+    DEBUG2_printf("     mmd_is_chars(lineptr, \"-\", 1)=%d\n", (int)mmd_is_chars(lineptr, "-", 1));
+    DEBUG2_printf("     mmd_is_chars(lineptr, \"=\", 1)=%d\n", (int)mmd_is_chars(lineptr, "=", 1));
 
     if ((lineptr - line - stackptr->indent) < 4 && ((stackptr->parent->type != MMD_TYPE_CODE_BLOCK && !stackptr->fence && mmd_is_codefence(lineptr, '\0', 0, NULL)) || (stackptr->fence && mmd_is_codefence(lineptr, stackptr->fence, stackptr->fencelen, NULL))))
     {
@@ -706,9 +709,11 @@ mmdLoadFile(FILE *fp)                   /* I - File to load */
       }
       continue;
     }
-    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (lineptr - linestart) >= stackptr->indent && (mmd_is_chars(lineptr, "-", 1) || mmd_is_chars(lineptr, "=", 1)))
+    else if (block && block->type == MMD_TYPE_PARAGRAPH && (lineptr - linestart) < 4 && (lineptr - line) >= stackptr->indent && (mmd_is_chars(lineptr, "-", 1) || mmd_is_chars(lineptr, "=", 1)))
     {
       int ch = *lineptr;
+
+      DEBUG_puts("     SETEXT HEADING\n");
 
       lineptr += 3;
       while (*lineptr == ch)
@@ -1483,7 +1488,6 @@ mmd_is_table(_mmd_filebuf_t *file,	/* I - File to read from */
              int            indent)	/* I - Indentation of table line */
 {
   const char	*ptr;			/* Pointer into buffer */
-  int		is_table = 0;		/* Is this a table? */
 
 
   ptr = file->bufptr;
@@ -1496,10 +1500,7 @@ mmd_is_table(_mmd_filebuf_t *file,	/* I - File to read from */
   }
 
   if ((ptr - file->bufptr - indent) >= 4)
-  {
-    DEBUG2_puts("mmd_is_table: Code, returning 0.\n");
     return (0);
-  }
 
   while (*ptr)
   {
@@ -1509,12 +1510,7 @@ mmd_is_table(_mmd_filebuf_t *file,	/* I - File to read from */
     ptr ++;
   }
 
-  if (*ptr == '\r' || *ptr == '\n')
-    is_table = 1;
-
-  DEBUG2_printf("mmd_is_table: Returning %d\n", is_table);
-
-  return (is_table);
+  return (*ptr == '\r' || *ptr == '\n');
 }
 
 

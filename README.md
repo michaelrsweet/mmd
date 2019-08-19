@@ -73,6 +73,7 @@ to install it in `/usr/local` along with a man page.
 The following changes were made for v1.7:
 
 - Fixed table parsing (Issue #11)
+- Fixed block-quoted Setext heading parsing.
 
 
 ## Changes in v1.6
