@@ -164,7 +164,7 @@ All work and no play makes Johnny a dull boy.
 
 Escaped backtick (`\``)
 
-Tables as code:
+Table as code:
 
     | Heading 1 | Heading 2 | Heading 3 |
     | --------- | --------- | --------- |

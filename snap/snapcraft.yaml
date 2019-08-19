@@ -1,5 +1,5 @@
 name: mmdutil
-version: 1.6
+version: 1.7
 summary: Markdown conversion utility.
 description: |
   mmdutil is a simple markdown conversion utility that generates HTML or man

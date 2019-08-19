@@ -68,6 +68,13 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+## Changes in v1.7
+
+The following changes were made for v1.7:
+
+- Fixed table parsing (Issue #11)
+
+
 ## Changes in v1.6
 
 The following changes were made for v1.6:
