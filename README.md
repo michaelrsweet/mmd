@@ -14,7 +14,7 @@ version of markdown syntax with the following exceptions:
 - Some pathological nested link and inline style features supported by
   CommonMark (`******Really Strong Text******`) are not supported by `mmd`.
 
-In addition, `mmd` supports a couple (otherwise undocumented) CommonMark
+In addition, `mmd` supports a couple (otherwise undocumented) markdown
 extensions:
 
 - Metadata as used by Jekyll and other web markdown solutions.
@@ -84,7 +84,7 @@ The following changes were made for v1.6:
 - The `testmmd` program now supports running tests from the CommonMark
   specification and/or from the CommonMark test suite (Issue #9)
 - More CommonMark features (code languages, link titles, space-filled thematic
-  breaks) and edge cases are now supported.
+  breaks) and edge cases are now supported (Issue #10)
 - Added new `mmdGetOptions` and `mmdSetOptions` functions to control which
   extensions are supported.
 - Added new `mmdGetExtra` function to get the link title or code language

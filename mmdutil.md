@@ -26,7 +26,8 @@ mmdutil --version
 **mmdutil** is a simple markdown conversion utility that generates HTML or man
 page source from markdown.  **mmdutil** supports most of the CommonMark syntax
 as well as the metadata, "@" link, and table markdown extensions.  Because
-mmdutil supports non-HTML output formats, embedded HTML is explicitly *not* supported.
+mmdutil supports non-HTML output formats, embedded HTML is explicitly *not*
+supported.
 
 If no output file is specified using the "-o" option, **mmdutil** sends the
 generated document to the standard output.

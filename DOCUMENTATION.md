@@ -36,7 +36,7 @@ version of markdown syntax with the following exceptions:
 - Some pathological nested link and inline style features supported by
   CommonMark (`******Really Strong Text******`) are not supported by `mmd`.
 
-In addition, `mmd` supports a couple (otherwise undocumented) CommonMark
+In addition, `mmd` supports a couple (otherwise undocumented) markdown
 extensions:
 
 - Metadata as used by Jekyll and other web markdown solutions.
