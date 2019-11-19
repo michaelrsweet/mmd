@@ -36,6 +36,10 @@
 #include <errno.h>
 #include <time.h>
 
+#if _WIN32
+#  define localtime_r(t,tm) localtime_s(tm,t)
+#endif /* _WIN32 */
+
 
 /*
  * Local types...
@@ -1011,7 +1015,7 @@ man_head(FILE	     *outfp,		/* I - Output file */
 	 const char *version)		/* I - Version of book, if any */
 {
   time_t	curtime;		/* Current time */
-  struct tm	*curdate;		/* Current date */
+  struct tm	curdate;		/* Current date */
   const char	*source_date_epoch;	/* SOURCE_DATE_EPOCH environment variable */
 
 
@@ -1025,9 +1029,9 @@ man_head(FILE	     *outfp,		/* I - Output file */
   else
     curtime = time(NULL);
 
-  curdate = localtime(&curtime);
+  localtime_r(&curtime, &curdate);
 
-  fprintf(outfp, ".TH \"%s\" %d \"%04d-%02d-%02d\" \"%s\"\n", title ? title : "unknown", section, curdate->tm_year + 1900, curdate->tm_mon + 1, curdate->tm_mday, author ? author : "Unknown");
+  fprintf(outfp, ".TH \"%s\" %d \"%04d-%02d-%02d\" \"%s\"\n", title ? title : "unknown", section, curdate.tm_year + 1900, curdate.tm_mon + 1, curdate.tm_mday, author ? author : "Unknown");
 }
 
 

@@ -68,6 +68,11 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+## Changes in vFUTURE
+
+- Addressed an issue identified by the LGTM code scanner.
+
+
 ## Changes in v1.7
 
 The following changes were made for v1.7:
