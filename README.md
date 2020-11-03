@@ -70,6 +70,7 @@ to install it in `/usr/local` along with a man page.
 
 ## Changes in vFUTURE
 
+- Markdown of the form `([title](link))` did not parse correctly.
 - Addressed an issue identified by the LGTM code scanner.
 
 
