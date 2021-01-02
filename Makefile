@@ -3,13 +3,13 @@
 #
 #     https://github.com/michaelrsweet/mmd
 #
-# Copyright © 2017-2019 by Michael R Sweet.
+# Copyright © 2017-2021 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
 #
 
-VERSION	=	1.7
+VERSION	=	1.8
 prefix	=	$(DESTDIR)/usr/local
 bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
@@ -37,6 +37,12 @@ install:	mmdutil
 	mkdir -p $(mandir)/man1
 	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
 
+# Scan the code using Cppcheck <http://cppcheck.sourceforge.net>
+cppcheck:
+	cppcheck --template=gcc --addon=cert.py --suppress=cert-MSC24-C --suppress=cert-EXP05-C --suppress=cert-API01-C $(OBJS:.o=.c) 2>cppcheck.log
+	@test -s cppcheck.log && (echo ""; echo "Errors detected:"; echo ""; cat cppcheck.log; exit 1) || exit 0
+
+
 sanitizer:
 	$(MAKE) clean
 	$(MAKE) OPTIM="-g -fsanitize=address" all
@@ -46,6 +52,8 @@ mmdutil:	mmd.o mmdutil.o
 
 testmmd:	mmd.o testmmd.o testmmd.md
 	$(CC) $(LDFLAGS) -o testmmd mmd.o testmmd.o $(LIBS)
+
+test:	testmmd
 	./testmmd testmmd.md >testmmd.html 2>testmmd.log
 
 $(OBJS):	mmd.h Makefile

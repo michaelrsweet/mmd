@@ -53,7 +53,7 @@ The supplied makefile allows you to build the unit tests on Linux and macOS (at
 least), which verify that all of the functions work as expected to produce a
 HTML file called `testmmd.html`:
 
-    make
+    make test
 
 The makefile also builds the `mmdutil` program.
 
@@ -68,10 +68,15 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
-## Changes in vFUTURE
+## Changes in v1.8
 
 - Markdown of the form `([title](link))` did not parse correctly.
 - Addressed an issue identified by the LGTM code scanner.
+- Addressed some issues identified by the Cppcheck code scanner.
+- Changed the makefile to only run the unit test program when using the "test"
+  target.
+- Added a Cppcheck target ("cppcheck") to use this code scanning program against
+  the `mmd` sources.
 
 
 ## Changes in v1.7
@@ -159,7 +164,7 @@ The following changes were made for v1.1:
 
 ## Legal Stuff
 
-Copyright © 2017-2019 by Michael R Sweet.
+Copyright © 2017-2021 by Michael R Sweet.
 
 mmd is licensed under the Apache License Version 2.0 with an exception to
 allow linking against GPL2/LGPL2 software (like older versions of CUPS).  See

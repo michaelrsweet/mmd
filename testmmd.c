@@ -5,9 +5,10 @@
  *
  * Usage:
  *
- *     ./testmmd [--ext {all,none}] [--help] [--only-body] [--spec] [-o filename.html] filename.md
+ *     ./testmmd [--ext {all,none}] [--help] [--only-body] [--spec]
+ *               [-o filename.html] filename.md
  *
- * Copyright © 2017-2019 by Michael R Sweet.
+ * Copyright © 2017-2021 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.  See the file "LICENSE" for more
  * information.
@@ -415,7 +416,8 @@ run_spec(const char *filename,		/* I - Markdown spec file */
   char	line[1024],			/* Line from file */
 	markdown[4096],			/* Example markdown */
 	html[4096],			/* Expected HTML */
-	*ptr;				/* Pointer into markdown/HTML */
+	*mptr,				/* Pointer into markdown */
+	*hptr;				/* Pointer into HTML */
 
 
   if (!filename)
@@ -444,14 +446,14 @@ run_spec(const char *filename,		/* I - Markdown spec file */
       markdown[0] = markdown[sizeof(markdown) - 1] = '\0';
       html[0]     = html[sizeof(html) - 1]         = '\0';
 
-      ptr = markdown;
+      mptr = markdown;
+      hptr = html;
 
       while (fgets(line, sizeof(line), fp))
       {
         if (line[0] == '.')
         {
           is_html = 1;
-          ptr     = html;
         }
         else if (!strncmp(line, "````", 4))
         {
@@ -459,13 +461,13 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         }
         else if (is_html)
         {
-          add_spec_text(ptr, line, sizeof(html) - (size_t)(ptr - html));
-          ptr += strlen(ptr);
+          add_spec_text(hptr, line, sizeof(html) - (size_t)(hptr - html));
+          hptr += strlen(hptr);
         }
         else
         {
-          add_spec_text(ptr, line, sizeof(markdown) - (size_t)(ptr - markdown));
-          ptr += strlen(ptr);
+          add_spec_text(mptr, line, sizeof(markdown) - (size_t)(mptr - markdown));
+          mptr += strlen(mptr);
         }
       }
 
@@ -479,7 +481,7 @@ run_spec(const char *filename,		/* I - Markdown spec file */
         fputs("SKIP (no HTML)\n", logfile);
         skipped ++;
       }
-      else if ((ptr = strchr(markdown, '<')) != NULL && (ptr == markdown || ptr[-1] != '`'))
+      else if ((mptr = strchr(markdown, '<')) != NULL && (mptr == markdown || mptr[-1] != '`'))
       {
         fputs("SKIP (markdown example with embedded HTML)\n", logfile);
         skipped ++;
@@ -548,11 +550,13 @@ run_spec(const char *filename,		/* I - Markdown spec file */
       * Show heading...
       */
 
-      for (ptr = line; *ptr; ptr ++)
-        if (*ptr != '#' && !isspace(*ptr & 255))
+      char *lptr;			/* Pointer into line */
+
+      for (lptr = line; *lptr; lptr ++)
+        if (*lptr != '#' && !isspace(*lptr & 255))
           break;			/* Find start of heading... */
 
-      fputs(ptr, logfile);
+      fputs(lptr, logfile);
     }
   }
 
