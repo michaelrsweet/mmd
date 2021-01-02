@@ -1,5 +1,12 @@
 # mmd
 
+![Version](https://img.shields.io/github/v/release/michaelrsweet/mmd?include_prereleases)
+![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/mmd)
+[![Build Status](https://travis-ci.org/michaelrsweet/mmd.svg?branch=master)](https://travis-ci.org/github/michaelrsweet/mmd)
+[![Coverity Scan Status](https://img.shields.io/coverity/scan/22387.svg)](https://scan.coverity.com/projects/michaelrsweet-mmd)
+[![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/context:cpp)
+[![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/)
+
 `mmd` is a miniature markdown parsing "library" consisting of a single C source
 file and accompanying header file.  `mmd` mostly conforms to the [CommonMark][]
 version of markdown syntax with the following exceptions:
