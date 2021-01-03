@@ -526,10 +526,7 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
   doc.root = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
 
   if (!doc.root)
-  {
-    fclose(fp);
     return (NULL);
-  }
 
  /*
   * Initialize the block stack...
@@ -1126,7 +1123,8 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
       if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
 	stackptr --;
 
-      block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
+      if (stackptr->parent)
+        block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
     }
 
    /*

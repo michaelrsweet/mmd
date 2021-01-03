@@ -80,6 +80,7 @@ to install it in `/usr/local` along with a man page.
 - Markdown of the form `([title](link))` did not parse correctly.
 - Addressed an issue identified by the LGTM code scanner.
 - Addressed some issues identified by the Cppcheck code scanner.
+- Addressed some issues identified by the Coverity code scanner.
 - Changed the makefile to only run the unit test program when using the "test"
   target.
 - Added a Cppcheck target ("cppcheck") to use this code scanning program against

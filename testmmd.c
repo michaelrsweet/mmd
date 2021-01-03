@@ -106,7 +106,11 @@ main(int  argc,				/* I - Number of command-line arguments */
         return (1);
       }
 
-      fp = fopen(argv[i], "w");
+      if ((fp = fopen(argv[i], "w")) == NULL)
+      {
+        perror(argv[i]);
+        return (1);
+      }
     }
     else if (!strcmp(argv[i], "--spec"))
     {
@@ -563,7 +567,10 @@ run_spec(const char *filename,		/* I - Markdown spec file */
   if (fp != stdin)
     fclose(fp);
 
-  printf("\nSummary: %d%% (%d passed, %d skipped, %d failed)\n", 100 * (passed + skipped) / number, passed, skipped, failed);
+  if (number == 0)
+    puts("\nNo tests found.");
+  else
+    printf("\nSummary: %d%% (%d passed, %d skipped, %d failed)\n", 100 * (passed + skipped) / number, passed, skipped, failed);
 
   return (failed != 0);
 }

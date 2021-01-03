@@ -18,7 +18,7 @@
  *    --version			Show version.
  *    -o filename.ext		Specify output file (default is stdout).
  *
- * Copyright © 2017-2019 by Michael R Sweet.
+ * Copyright © 2017-2021 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
@@ -996,9 +996,6 @@ man_block(FILE	 *outfp,		/* I - Output file */
   }
 
   fputs("\n", outfp);
-
-  if (type == MMD_TYPE_TABLE)
-    fputs(".TE\n", outfp);
 }
 
 
