@@ -1114,7 +1114,9 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
 	blank_code --;
       }
 
-      mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line + stackptr->indent, NULL);
+      if (stackptr->parent)
+        mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line + stackptr->indent, NULL);
+
       continue;
     }
 
