@@ -13,15 +13,6 @@ env:
 before_install:
   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
-addons:
-  coverity_scan:
-    project:
-      name: "michaelrsweet/mmd"
-      description: "Miniature Markdown 'Library' and Utility"
-    notification_email: msweet@msweet.org
-    build_command: "make"
-    branch_pattern: master
-
 jobs:
   include:
     # Linux-specific build stuff
@@ -34,6 +25,14 @@ jobs:
       addons:
         apt:
           packages: [cppcheck]
+      coverity_scan:
+        project:
+          name: "michaelrsweet/mmd"
+          description: "Miniature Markdown 'Library' and Utility"
+        notification_email: msweet@msweet.org
+        build_command_prepend: "make clean"
+        build_command: "make"
+        branch_pattern: master
 
     # macOS-specific build stuff
     - os: osx
