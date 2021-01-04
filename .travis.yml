@@ -4,6 +4,24 @@
 
 language: c
 
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "NtZxX20VfxNXR7KaGNybTPq+GIEdzt/Uo99MqicgSf7iAVB//EuD3Vvd8X+4L/O7nppAaAmD8YqXBfVKcW/OoxdL+vsr4YyyDOCySg0F5FaJBJqU86nIBS0hwGqMFBBhjk6ShDTCMiA8mqEnh+tHdv2Ig/eUy24b8PFkXn8Tusb/jaVCTo4WVgEK6MD31bmv0hWsaKeV/K6oudKjKRA+YPWywXJ23MYgJ1I0a03t6lvi4hedfCgS0L19wK25RoS4oo2Q9mzwoPu8YGpCjr5kdT/r6RbNm4/OI+05sQn1G3c2UxibElsD6C/1GOMYkIgp2FhIH9UyMSUr8BnptC+hzxFviXdj2b+mYnEkurgKzW+7zdDOatCokvlh+8gTpovzm+cAaQ7U4oJmo59ZrdD74hiYTy5VIY1R1FLkwLfsUBg/Q5ykmgitvE/kamAiJZoHSdEhNBxpTrxH3p24N6YKnVJNvwosVHwn7PHu7qCPFpx1CWhZYZuyiQxT8VAkDSpsk92mfHkSVFhiQwJuz2/cWGLQY35k8LhOWnYJgJ0T8J+vJYLlvvfhIpjGSLwkPcruqfxoyHTKW3RmtTRs1qKXPBkPb6G4lLE4eL8DkVlN+U815VZis+ifBkTefXRiw8uNJuQsl6koRvhiTXkMtynVJK+JZxAcSltSQvlBfU9lGPU="
+
+before_install:
+  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+addons:
+  coverity_scan:
+    project:
+      name: "michaelrsweet/mmd"
+      description: "Miniature Markdown 'Library' and Utility"
+    notification_email: msweet@msweet.org
+    build_command: "make"
+    branch_pattern: master
+
 jobs:
   include:
     # Linux-specific build stuff
