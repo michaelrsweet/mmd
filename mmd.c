@@ -1114,8 +1114,7 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
 	blank_code --;
       }
 
-      if (stackptr->parent)
-        mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line + stackptr->indent, NULL);
+      mmd_add(stackptr->parent, MMD_TYPE_CODE_TEXT, 0, line + stackptr->indent, NULL);
 
       continue;
     }
@@ -1125,8 +1124,7 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
       if (stackptr->parent->type == MMD_TYPE_CODE_BLOCK)
 	stackptr --;
 
-      if (stackptr->parent)
-        block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
+      block = mmd_add(stackptr->parent, type, 0, NULL, NULL);
     }
 
    /*
@@ -1217,6 +1215,9 @@ mmd_add(mmd_t	   *parent,		/* I - Parent node */
 
 
   DEBUG2_printf("Adding %s to %p(%s), whitespace=%d, text=\"%s\", url=\"%s\"\n", mmd_type_string(type), parent, parent ? mmd_type_string(parent->type) : "", whitespace, text ? text : "(null)", url ? url : "(null)");
+
+  if (!parent && type != MMD_TYPE_DOCUMENT)
+    return (NULL);			/* Only document nodes can be at the root */
 
   if ((temp = calloc(1, sizeof(mmd_t))) != NULL)
   {
