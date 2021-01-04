@@ -36,11 +36,11 @@ generate HTML and man page source from markdown.
 I'm providing `mmd` as open source under the Apache License Version 2.0 with
 exceptions for use with GPL2/LGPL2 applications which allows you do pretty much
 do whatever you like with it.  Please do provide feedback and report bugs to the
-Github project page at:
+Github project page at <https://www.msweet.org/mmd> so that everyone can
+benefit.
 
-    https://www.msweet.org/mmd
-
-so that everyone can benefit.
+[CommonMark]: https://spec.commonmark.org
+[GFM]: https://github.github.com/gfm
 
 
 ## Requirements
@@ -177,9 +177,3 @@ Copyright © 2017-2021 by Michael R Sweet.
 mmd is licensed under the Apache License Version 2.0 with an exception to
 allow linking against GPL2/LGPL2 software (like older versions of CUPS).  See
 the files "LICENSE" and "NOTICE" for more information.
-
-
-## References
-
-[CommonMark]: https://spec.commonmark.org
-[GFM]: https://github.github.com/gfm
