@@ -8,7 +8,7 @@ env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "NtZxX20VfxNXR7KaGNybTPq+GIEdzt/Uo99MqicgSf7iAVB//EuD3Vvd8X+4L/O7nppAaAmD8YqXBfVKcW/OoxdL+vsr4YyyDOCySg0F5FaJBJqU86nIBS0hwGqMFBBhjk6ShDTCMiA8mqEnh+tHdv2Ig/eUy24b8PFkXn8Tusb/jaVCTo4WVgEK6MD31bmv0hWsaKeV/K6oudKjKRA+YPWywXJ23MYgJ1I0a03t6lvi4hedfCgS0L19wK25RoS4oo2Q9mzwoPu8YGpCjr5kdT/r6RbNm4/OI+05sQn1G3c2UxibElsD6C/1GOMYkIgp2FhIH9UyMSUr8BnptC+hzxFviXdj2b+mYnEkurgKzW+7zdDOatCokvlh+8gTpovzm+cAaQ7U4oJmo59ZrdD74hiYTy5VIY1R1FLkwLfsUBg/Q5ykmgitvE/kamAiJZoHSdEhNBxpTrxH3p24N6YKnVJNvwosVHwn7PHu7qCPFpx1CWhZYZuyiQxT8VAkDSpsk92mfHkSVFhiQwJuz2/cWGLQY35k8LhOWnYJgJ0T8J+vJYLlvvfhIpjGSLwkPcruqfxoyHTKW3RmtTRs1qKXPBkPb6G4lLE4eL8DkVlN+U815VZis+ifBkTefXRiw8uNJuQsl6koRvhiTXkMtynVJK+JZxAcSltSQvlBfU9lGPU="
+   - secure: "hHw4xKUA436afMrkTmUBMCewuq9E40o3PvsU6q5mDARf0B6NCFymKTkQtLGwqHkimOGwHufHwGAQWsgyAuPe43d9366Uun/v1kNS1HAYf2/rj07fzVuXM21sx5hcLXlcBpzrXDekzrI2bIiCYDg+ELSI8KZqDSwi4r6+/ri1YiQJ2SNWgG9TRhSid3BN9Q0l86VlAu6ErLuru8hqXnHYGw5Bv8DFgolL+TjZUbSWC7bdvx4DiX/hSyStW+vpyf9yvgB2wkcgzBLA+0NOoV7YOP5b/rXyTBsS7iC03V3A4p7uj+oAl5MQBulaxDFP3ofscu0s3AOx7x+lips6zXZ4qGVbrix7yalsMqJwnw2pElr7sE9K0AVYbNI9PKa8MK5kF4hAQ34hN0BsLNMUx9ZC3SPRX5b5tNiIlyTDH8Gk7GVIbQZ2rbhxobkCDz+FeYfmaCUwXgtRVtlUW5/ENX7DlneMttrodSX7hJrTqphoP4sS9siEiOLuv9uhI51klkiLd2JqKRRgALPvE19Hu1IeTeNWLCHp1WRbVX5D4BLD+mdn0gRJiKL8wEH7nrla5wxhI7CrzHQ039fejkTRFuY32iH+315MSIpSrqvljeRbv3BjHQ/t+z+dqfqXE/trZUQplKTCm7OW8G8jfBj9gv12Tx4/DlAKVLwasCsQ3XVgAn8="
 
 before_install:
   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
@@ -25,14 +25,14 @@ jobs:
       addons:
         apt:
           packages: [cppcheck]
-      coverity_scan:
-        project:
-          name: "michaelrsweet/mmd"
-          description: "Miniature Markdown 'Library' and Utility"
-        notification_email: msweet@msweet.org
-        build_command_prepend: "make clean"
-        build_command: "make"
-        branch_pattern: master
+        coverity_scan:
+          project:
+            name: "michaelrsweet/mmd"
+            description: "Miniature Markdown 'Library' and Utility"
+          notification_email: msweet@msweet.org
+          build_command_prepend: "make clean"
+          build_command: "make"
+          branch_pattern: master
 
     # macOS-specific build stuff
     - os: osx
