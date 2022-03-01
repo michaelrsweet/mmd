@@ -1,8 +1,8 @@
 ---
 title: How to Use the mmd "Library"
 author: Michael R Sweet
-copyright: Copyright © 2017-2021 by Michael R Sweet
-version: 1.8
+copyright: Copyright © 2017-2022 by Michael R Sweet
+version: 1.9
 ...
 
 # Contents
