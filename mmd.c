@@ -3,7 +3,7 @@
  *
  *     https://github.com/michaelrsweet/mmd
  *
- * Copyright © 2017-2021 by Michael R Sweet.
+ * Copyright © 2017-2022 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
@@ -1599,7 +1599,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
     else if (*lineptr == '[' && type != MMD_TYPE_CODE_TEXT)
     {
      /*
-      * Link...
+      * Link or checkbox...
       */
 
       if (text)
@@ -1612,38 +1612,48 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 	whitespace = 0;
       }
 
-      lineptr = mmd_parse_link(doc, lineptr, &text, &url, &title, &refname);
-
-      if (text && *text == '`')
+      if ((mmd_options & MMD_OPTION_TASKS) && (!strncmp(lineptr, "[ ]", 3) || !strncmp(lineptr, "[x]", 3) || !strncmp(lineptr, "[X]", 3)))
       {
-	char *end = text + strlen(text) - 1;
-
-	text ++;
-	if (end > text && *end == '`')
-	  *end = '\0';
-
-	node = mmd_add(parent, MMD_TYPE_CODE_TEXT, whitespace, text, url);
-      }
-      else if (text)
-      {
-	node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
-	if (title)
-	  node->extra = strdup(title);
+        // Checkbox
+        mmd_add(parent, MMD_TYPE_CHECKBOX, 0, lineptr[1] == ' ' ? NULL : "x", NULL);
+        lineptr += 2;
       }
       else
-	node = NULL;
+      {
+        // Link
+	lineptr = mmd_parse_link(doc, lineptr, &text, &url, &title, &refname);
 
-      DEBUG2_printf("mmd_parse_inline: text=\"%s\", refname=\"%s\", node=%p\n", text, refname, node);
+	if (text && *text == '`')
+	{
+	  char *end = text + strlen(text) - 1;
 
-      if (refname && node)
-	mmd_ref_add(doc, node, refname, NULL, title);
+	  text ++;
+	  if (end > text && *end == '`')
+	    *end = '\0';
 
-      if (!*lineptr)
-	return;
+	  node = mmd_add(parent, MMD_TYPE_CODE_TEXT, whitespace, text, url);
+	}
+	else if (text)
+	{
+	  node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+	  if (title)
+	    node->extra = strdup(title);
+	}
+	else
+	  node = NULL;
 
-      text = url = NULL;
-      whitespace = 0;
-      lineptr --;
+	DEBUG2_printf("mmd_parse_inline: text=\"%s\", refname=\"%s\", node=%p\n", text, refname, node);
+
+	if (refname && node)
+	  mmd_ref_add(doc, node, refname, NULL, title);
+
+	if (!*lineptr)
+	  return;
+
+	text = url = NULL;
+	whitespace = 0;
+	lineptr --;
+      }
     }
     else if (*lineptr == '<' && type != MMD_TYPE_CODE_TEXT && strchr(lineptr + 1, '>'))
     {

@@ -1,4 +1,5 @@
-# mmd
+mmd - Miniature Markdown Library
+================================
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/mmd?include_prereleases)
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/mmd)
@@ -43,18 +44,21 @@ benefit.
 [GFM]: https://github.github.com/gfm
 
 
-## Requirements
+Requirements
+------------
 
 You'll need a C compiler.
 
 
-## How to Incorporate in Your Project
+How to Incorporate in Your Project
+----------------------------------
 
 Add the `mmd.c` and `mmd.h` files to your project.  Include the `mmd.h`
 header in any file that needs to read/convert markdown files.
 
 
-## "Kicking the Tires"
+"Kicking the Tires"
+-------------------
 
 The supplied makefile allows you to build the unit tests on Linux and macOS (at
 least), which verify that all of the functions work as expected to produce a
@@ -65,7 +69,8 @@ HTML file called `testmmd.html`:
 The makefile also builds the `mmdutil` program.
 
 
-## Installing `mmdutil`
+Installing `mmdutil`
+--------------------
 
 You can install the `mmdutil` program by copying it to somewhere appropriate or
 run:
@@ -75,7 +80,15 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
-## Changes in v1.8
+Changes in v1.9
+---------------
+
+- Added support for the Github-flavored markdown task list extension (check
+  boxes in lists)
+
+
+Changes in v1.8
+---------------
 
 - Markdown of the form `([title](link))` did not parse correctly.
 - Addressed an issue identified by the LGTM code scanner.
@@ -87,7 +100,8 @@ to install it in `/usr/local` along with a man page.
   the `mmd` sources.
 
 
-## Changes in v1.7
+Changes in v1.7
+---------------
 
 The following changes were made for v1.7:
 
@@ -95,7 +109,8 @@ The following changes were made for v1.7:
 - Fixed block-quoted Setext heading parsing.
 
 
-## Changes in v1.6
+Changes in v1.6
+---------------
 
 The following changes were made for v1.6:
 
@@ -118,7 +133,8 @@ The following changes were made for v1.6:
   string associated with certain nodes.
 
 
-## Changes in v1.5
+Changes in v1.5
+---------------
 
 The following changes were made for v1.5:
 
@@ -127,7 +143,8 @@ The following changes were made for v1.5:
   line breaks (Issue #4)
 
 
-## Changes in v1.4
+Changes in v1.4
+---------------
 
 The following changes were made for v1.4:
 
@@ -139,7 +156,8 @@ The following changes were made for v1.4:
 - Fixed a build issue with Visual Studio.
 
 
-## Changes in v1.3
+Changes in v1.3
+---------------
 
 The following changes were made for v1.3:
 
@@ -148,7 +166,8 @@ The following changes were made for v1.3:
 - Added `mmdutil` program for converting markdown to HTML and man files.
 
 
-## Changes in v1.2
+Changes in v1.2
+---------------
 
 The following changes were made for v1.2:
 
@@ -156,7 +175,8 @@ The following changes were made for v1.2:
 - Added support for markdown tables (Issue #3)
 
 
-## Changes in v1.1
+Changes in v1.1
+---------------
 
 The following changes were made for v1.1:
 
@@ -170,10 +190,11 @@ The following changes were made for v1.1:
 - Fixed a parsing bug for headings that follow a list.
 
 
-## Legal Stuff
+Legal Stuff
+-----------
 
-Copyright © 2017-2021 by Michael R Sweet.
+Copyright © 2017-2022 by Michael R Sweet.
 
-mmd is licensed under the Apache License Version 2.0 with an exception to
-allow linking against GPL2/LGPL2 software (like older versions of CUPS).  See
-the files "LICENSE" and "NOTICE" for more information.
+mmd is licensed under the Apache License Version 2.0 with an (optional)
+exception to allow linking against GPL2/LGPL2-only software.  See the files
+"LICENSE" and "NOTICE" for more information.

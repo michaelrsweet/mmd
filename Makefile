@@ -3,13 +3,13 @@
 #
 #     https://github.com/michaelrsweet/mmd
 #
-# Copyright © 2017-2021 by Michael R Sweet.
+# Copyright © 2017-2022 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
 #
 
-VERSION	=	1.8
+VERSION	=	1.9
 prefix	=	$(DESTDIR)/usr/local
 bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man

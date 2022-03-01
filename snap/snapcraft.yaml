@@ -1,10 +1,10 @@
 name: mmdutil
-version: 1.8
+version: 1.9
 summary: Markdown conversion utility.
 description: |
   mmdutil is a simple markdown conversion utility that generates HTML or man
   page source from markdown.  mmdutil supports most of the CommonMark syntax
-  as well as the metadata, "@" link, and table markdown extensions.
+  as well as the metadata, "@" link, table, and task list markdown extensions.
 
 confinement: strict
 

@@ -68,6 +68,10 @@ And unordered lists:
 
 * Third item.
 
+* [ ] Fourth item (unchecked)
+
+- [x] Fifth item (checked)
+
 Code block with `\``:
 
 ```
@@ -150,8 +154,8 @@ All work and no play makes Johnny a dull boy.
 All work and no play makes Johnny a dull boy.
 All work and no play makes Johnny a dull boy.
 
-All work and no play makes Johnny a dull boy.  
-All work and no play makes Johnny a dull boy.  
+All work and no play makes Johnny a dull boy.
+All work and no play makes Johnny a dull boy.
 All work and no play makes Johnny a dull boy.
 
 \(Escaped Parenthesis)
