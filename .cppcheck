@@ -7,7 +7,7 @@ uninitvar
 
 // Don't report non-const casts.  Inline suppression comments are not working,
 // otherwise we'd be more selective...
-// cert-EXP05-C
+cert-EXP05-C
 
 // fopen_s is NOT supported on POSIX platforms and DOES NOT APPLY for reading
 // of files!

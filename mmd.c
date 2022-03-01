@@ -181,30 +181,17 @@ mmdCopyAllText(mmd_t *node)		/* I - Parent node */
       */
 
       textlen = strlen(current->text);
+      allsize += textlen + (size_t)current->whitespace;
+      temp    = realloc(all, allsize);
 
-      if (allsize == 0)
+      if (!temp)
       {
-	allsize = textlen + (size_t)current->whitespace + 1;
-	all	= malloc(allsize);
-	allptr	= all;
-
-	if (!all)
-	  return (NULL);
+	free(all);
+	return (NULL);
       }
-      else
-      {
-	allsize += textlen + (size_t)current->whitespace;
-	temp	= realloc(all, allsize);
 
-	if (!temp)
-	{
-	  free(all);
-	  return (NULL);
-	}
-
-	allptr = temp + (allptr - all);
-	all    = temp;
-      }
+      allptr = temp + (allptr - all);
+      all    = temp;
 
       if (current->whitespace)
 	*allptr++ = ' ';
@@ -541,6 +528,10 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
 
   memset(&file, 0, sizeof(file));
   file.fp = fp;
+
+#ifdef __clang_analyzer__
+  memset(line, 0, sizeof(line));
+#endif // __clang_analyzer__
 
   while ((lineptr = mmd_read_line(&file, line, sizeof(line))) != NULL)
   {
