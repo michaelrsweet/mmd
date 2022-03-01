@@ -15,8 +15,8 @@ bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
 
 CC	=	gcc
-CFLAGS	=	$(OPTIM) $(CPPFLAGS)
-CPPFLAGS =	-Wall '-DVERSION="$(VERSION)"'
+CFLAGS	=	$(OPTIM) $(CPPFLAGS) -Wall
+CPPFLAGS =	'-DVERSION="$(VERSION)"'
 LDFLAGS	=	$(OPTIM)
 LIBS	=
 OBJS	=	testmmd.o mmd.o mmdutil.o
@@ -29,8 +29,10 @@ OPTIM	=	-Os -g
 
 all:	testmmd mmdutil DOCUMENTATION.html
 
+
 clean:
 	rm -f testmmd $(OBJS)
+
 
 install:	mmdutil
 	mkdir -p $(bindir)
@@ -38,9 +40,11 @@ install:	mmdutil
 	mkdir -p $(mandir)/man1
 	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
 
+
 sanitizer:
 	$(MAKE) clean
 	$(MAKE) OPTIM="-g -fsanitize=address" all
+
 
 # Fuzz-test the library <>
 .PHONY: afl
@@ -48,6 +52,7 @@ afl:
 	$(MAKE) -$(MAKEFLAGS) CC="afl-clang-fast" OPTIM="-g" clean all
 	test afl-output || rm -rf afl-output
 	afl-fuzz -x afl-pdf.dict -i afl-input -o afl-output -V 600 -e pdf -t 5000 ./testmmd @@
+
 
 # Analyze code with the Clang static analyzer <https://clang-analyzer.llvm.org>
 clang:
@@ -61,7 +66,7 @@ cppcheck:
 	cppcheck $(CPPFLAGS) --template=gcc --addon=cert.py --suppressions-list=.cppcheck $(OBJS:.o=.c) 2>cppcheck.log
 	test -s cppcheck.log && (echo "$(GHA_ERROR)Cppcheck detected issues."; echo ""; cat cppcheck.log; exit 1) || exit 0
 
-
+# Make various bits...
 mmdutil:	mmd.o mmdutil.o
 	$(CC) $(LDFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
 
@@ -76,5 +81,6 @@ $(OBJS):	mmd.h Makefile
 DOCUMENTATION.html:	DOCUMENTATION.md testmmd
 	./testmmd DOCUMENTATION.md >DOCUMENTATION.html 2>/dev/null
 
+# Test against commonmark "spec"...
 commonmark:	testmmd commonmark.md
 	./testmmd --spec commonmark.md --ext none -o commonmark.log
