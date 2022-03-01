@@ -85,6 +85,7 @@ Changes in v1.9
 
 - Added support for the Github-flavored markdown task list extension (check
   boxes in lists)
+- Addressed some issues found by the Clang static analyzer.
 
 
 Changes in v1.8
