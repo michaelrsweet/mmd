@@ -732,7 +732,7 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
 	stackptr = stack;
 
       mmd_add(stackptr->parent, MMD_TYPE_THEMATIC_BREAK, 0, NULL, NULL);
-      type  = MMD_TYPE_PARAGRAPH;
+//      type  = MMD_TYPE_PARAGRAPH;
       block = NULL;
       continue;
     }
@@ -754,13 +754,13 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
       while (stackptr > stack && stackptr->indent > newindent)
 	stackptr --;
 
-      if (stackptr->parent->type == MMD_TYPE_LIST_ITEM && stackptr->indent == newindent)
+      if (stackptr > stack && stackptr->parent->type == MMD_TYPE_LIST_ITEM && stackptr->indent == newindent)
 	stackptr --;
 
-      if (stackptr->parent->type == MMD_TYPE_ORDERED_LIST && stackptr->indent == newindent)
+      if (stackptr > stack && stackptr->parent->type == MMD_TYPE_ORDERED_LIST && stackptr->indent == newindent)
 	stackptr --;
 
-      if (stackptr->parent->type == MMD_TYPE_BLOCK_QUOTE && line[0] != '>')
+      if (stackptr > stack && stackptr->parent->type == MMD_TYPE_BLOCK_QUOTE && line[0] != '>')
 	stackptr --;
 
       if (stackptr->parent->type != MMD_TYPE_UNORDERED_LIST && stackptr < (stack + sizeof(stack) / sizeof(stack[0]) - 1))
@@ -1540,8 +1540,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	/* I - Document */
 	*lineptr = '\0';
 	mmd_add(parent, type, whitespace, text, NULL);
 
-	text	   = NULL;
-	whitespace = 0;
+	text = NULL;
       }
 
       if (!strncmp(lineptr + 1, " \n", 2) && lineptr[3])
