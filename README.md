@@ -3,7 +3,7 @@ mmd - Miniature Markdown Library
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/mmd?include_prereleases)
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/mmd)
-[![Build Status](https://travis-ci.com/michaelrsweet/mmd.svg?branch=master)](https://travis-ci.com/github/michaelrsweet/mmd)
+[![Build Status](https://img.shields.io/github/workflow/status/michaelrsweet/mmd/Build)](https://github.com/michaelrsweet/mmd/actions/workflows/build.yml)
 [![Coverity Scan Status](https://img.shields.io/coverity/scan/22387.svg)](https://scan.coverity.com/projects/michaelrsweet-mmd)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/context:cpp)
 [![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/)
