@@ -29,7 +29,7 @@ extensions:
 
 - "@" links which resolve to headings within the file.
 
-- Tables as used by the [Github Flavored Markdown Spec][GFM].
+- Tables and task lists as used by the [Github Flavored Markdown Spec][GFM].
 
 `mmd` also includes a standalone utility called `mmdutil` that can be used to
 generate HTML and man page source from markdown.
