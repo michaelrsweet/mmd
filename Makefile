@@ -15,7 +15,8 @@ bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
 
 CC	=	gcc
-CFLAGS	=	$(OPTIM) -Wall '-DVERSION="$(VERSION)"'
+CFLAGS	=	$(OPTIM) $(CPPFLAGS)
+CPPFLAGS =	-Wall '-DVERSION="$(VERSION)"'
 LDFLAGS	=	$(OPTIM)
 LIBS	=
 OBJS	=	testmmd.o mmd.o mmdutil.o
@@ -37,15 +38,29 @@ install:	mmdutil
 	mkdir -p $(mandir)/man1
 	./mmdutil --man 1 mmdutil.md >$(mandir)/man1/mmdutil.1
 
-# Scan the code using Cppcheck <http://cppcheck.sourceforge.net>
-cppcheck:
-	cppcheck --template=gcc --addon=cert.py --suppress=cert-MSC24-C --suppress=cert-EXP05-C --suppress=cert-API01-C $(OBJS:.o=.c) 2>cppcheck.log
-	@test -s cppcheck.log && (echo ""; echo "Errors detected:"; echo ""; cat cppcheck.log; exit 1) || exit 0
-
-
 sanitizer:
 	$(MAKE) clean
 	$(MAKE) OPTIM="-g -fsanitize=address" all
+
+# Fuzz-test the library <>
+.PHONY: afl
+afl:
+	$(MAKE) -$(MAKEFLAGS) CC="afl-clang-fast" OPTIM="-g" clean all
+	test afl-output || rm -rf afl-output
+	afl-fuzz -x afl-pdf.dict -i afl-input -o afl-output -V 600 -e pdf -t 5000 ./testmmd @@
+
+# Analyze code with the Clang static analyzer <https://clang-analyzer.llvm.org>
+clang:
+	clang $(CPPFLAGS) --analyze $(OBJS:.o=.c) 2>clang.log
+	rm -rf $(OBJS:.o=.plist)
+	test -s clang.log && (echo "$(GHA_ERROR)Clang detected issues."; echo ""; cat clang.log; exit 1) || exit 0
+
+
+# Analyze code using Cppcheck <http://cppcheck.sourceforge.net>
+cppcheck:
+	cppcheck $(CPPFLAGS) --template=gcc --addon=cert.py --suppressions-list=.cppcheck $(OBJS:.o=.c) 2>cppcheck.log
+	test -s cppcheck.log && (echo "$(GHA_ERROR)Cppcheck detected issues."; echo ""; cat cppcheck.log; exit 1) || exit 0
+
 
 mmdutil:	mmd.o mmdutil.o
 	$(CC) $(LDFLAGS) -o mmdutil mmd.o mmdutil.o $(LIBS)
