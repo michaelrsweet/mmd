@@ -453,25 +453,29 @@ mmdIsBlock(mmd_t *node)			/* I - Node */
  * 'mmdLoad()' - Load a markdown file into nodes.
  */
 
-mmd_t *					/* O - First node in markdown */
-mmdLoad(const char *filename)		/* I - File to load */
+mmd_t *					/* O - Root node in markdown */
+mmdLoad(mmd_t      *root,		/* I - Root node for document or `NULL` for a new document */
+        const char *filename)		/* I - File to load */
 {
   FILE		*fp;			/* File */
-  mmd_t		*doc;			/* Document */
 
 
  /*
-  * Open the file and create an empty document...
+  * Open the file and load the document...
   */
 
   if ((fp = fopen(filename, "r")) == NULL)
     return (NULL);
 
-  doc = mmdLoadFile(fp);
+  root = mmdLoadFile(root, fp);
+
+ /*
+  * Close and return...
+  */
 
   fclose(fp);
 
-  return (doc);
+  return (root);
 }
 
 
@@ -480,7 +484,8 @@ mmdLoad(const char *filename)		/* I - File to load */
  */
 
 mmd_t *					/* O - First node in markdown */
-mmdLoadFile(FILE *fp)			/* I - File to load */
+mmdLoadFile(mmd_t *root,
+            FILE  *fp)			/* I - File to load */
 {
   size_t	i;			/* Looping var */
   _mmd_doc_t	doc;			/* Document */
@@ -503,14 +508,17 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
 
 
  /*
-  * Create an empty document...
+  * Create an empty document as needed...
   */
 
   DEBUG_printf("mmdLoadFile: mmd_options=%d%s%s\n", mmd_options, (mmd_options & MMD_OPTION_METADATA) ? " METADATA" : "", (mmd_options & MMD_OPTION_TABLES) ? " TABLES" : "");
 
   memset(&doc, 0, sizeof(doc));
 
-  doc.root = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
+  if (root)
+    doc.root = root;
+  else
+    doc.root = mmd_add(NULL, MMD_TYPE_DOCUMENT, 0, NULL, NULL);
 
   if (!doc.root)
     return (NULL);
@@ -1177,6 +1185,67 @@ mmdLoadFile(FILE *fp)			/* I - File to load */
   */
 
   return (doc.root);
+}
+
+
+/*
+ * 'mmdLoadString()' - Load a markdown string into nodes.
+ */
+
+mmd_t *					/* O - Root node in markdown */
+mmdLoadString(mmd_t      *root,		/* I - Root node for document or `NULL` for a new document */
+              const char *s)		/* I - String to load */
+{
+  FILE		*fp;			/* File */
+
+
+#if _WIN32
+ /*
+  * Windows does not provide the POSIX fmemopen, so create a temporary file and
+  * have MMD read it...
+  */
+
+  char		tempfile[1024];		/* Temporary filename */
+
+  if (tempnam_s(tempfile, sizeof(tempfile))
+    return (root);
+
+  if ((fp = fopen(tempfile, "w+")) == NULL)
+    return (root);
+
+  fputs(fp, s);
+  frewind(fp);
+
+#else // POSIX
+ /*
+  * Open the string as a file...
+  */
+
+  if ((fp = fmemopen((void *)s, strlen(s), "r")) == NULL)
+    return (root);
+#endif // _WIN32
+
+ /*
+  * Load the string...
+  */
+
+  root = mmdLoadFile(root, fp);
+
+ /*
+  * Close the memory file...
+  */
+
+  fclose(fp);
+
+#if _WIN32
+ /*
+  * Remove the temporary file...
+  */
+
+  unlink(tempfile);
+#endif // _WIN32
+
+  return (root);
 }
 
 

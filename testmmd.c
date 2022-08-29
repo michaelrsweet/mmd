@@ -134,9 +134,9 @@ main(int  argc,				/* I - Number of command-line arguments */
   if (spec_mode)
     return (run_spec(filename, fp));
   else if (filename)
-    doc = mmdLoad(filename);
+    doc = mmdLoad(NULL, filename);
   else
-    doc = mmdLoadFile(stdin);
+    doc = mmdLoadFile(NULL, stdin);
 
   if (!doc)
   {
@@ -509,7 +509,7 @@ run_spec(const char *filename,		/* I - Markdown spec file */
 
         outbuffer[0] = outbuffer[sizeof(outbuffer) - 1] = '\0';
 
-        if ((doc = mmdLoadFile(infile)) == NULL)
+        if ((doc = mmdLoadFile(NULL, infile)) == NULL)
         {
           fputs("FAIL (unable to load)\n", logfile);
           failed ++;

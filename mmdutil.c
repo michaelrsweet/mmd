@@ -149,7 +149,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	  return (1);
 	}
 
-	if ((front = mmdLoad(argv[i])) == NULL)
+	if ((front = mmdLoad(NULL, argv[i])) == NULL)
 	{
 	  fprintf(stderr, "mmdutil: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
 	  return (1);
@@ -230,7 +230,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     }
     else if (num_files < (int)(sizeof(files) / sizeof(files[0])))
     {
-      if ((files[num_files] = mmdLoad(argv[i])) == NULL)
+      if ((files[num_files] = mmdLoad(NULL, argv[i])) == NULL)
       {
 	fprintf(stderr, "mmdutil: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
 	return (1);

@@ -103,8 +103,9 @@ extern mmd_type_t   mmdGetType(mmd_t *node);
 extern const char   *mmdGetURL(mmd_t *node);
 extern int          mmdGetWhitespace(mmd_t *node);
 extern int          mmdIsBlock(mmd_t *node);
-extern mmd_t        *mmdLoad(const char *filename);
-extern mmd_t        *mmdLoadFile(FILE *fp);
+extern mmd_t        *mmdLoad(mmd_t *root, const char *filename);
+extern mmd_t        *mmdLoadFile(mmd_t *root, FILE *fp);
+extern mmd_t        *mmdLoadString(mmd_t *root, const char *s);
 extern void         mmdSetOptions(mmd_option_t options);
 
 #  ifdef __cplusplus

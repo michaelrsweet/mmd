@@ -80,6 +80,13 @@ run:
 to install it in `/usr/local` along with a man page.
 
 
+Changes in v2.0
+---------------
+
+- Added `mxmlLoadString` API and added a document pointer to the other load
+  functions to allow concatenation of markdown files.
+
+
 Changes in v1.9
 ---------------
 

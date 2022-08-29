@@ -52,7 +52,7 @@ extensions:
 The `mmdLoad` function loads a document on disk into memory and returns the root
 node of the document:
 
-    mmd_t *doc = mmdLoad("filename.md");
+    mmd_t *doc = mmdLoad(NULL, "filename.md");
 
 Each node has an associated type that can be retrieved using the `mmdGetType`
 function.  The value is represented as an enumeration:
@@ -761,7 +761,7 @@ block and `0` otherwise.
 ## mmdLoad
 
     mmd_t *
-    mmdLoad(const char *filename);
+    mmdLoad(mmd_t *root, const char *filename);
 
 The `mmdLoad` function loads a markdown document from the specified file.  The
 function understands the CommonMark syntax and Jekyll metadata.
@@ -774,10 +774,23 @@ and out-of-memory conditions.
 ## mmdLoadFile
 
     mmd_t *
-    mmdLoadFile(FILE *fp);
+    mmdLoadFile(mmd_t *root, FILE *fp);
 
 The `mmdLoadFile` function loads a markdown document from the specified `FILE`
 pointer.  The function understands the CommonMark syntax and Jekyll metadata.
+
+The return value is a pointer to the root document node on success or `NULL` on
+failure.  Due to the nature of markdown, the only failures are out-of-memory
+conditions.
+
+
+## mmdLoadString
+
+    mmd_t *
+    mmdLoadFile(mmd_t *root, const char *s);
+
+The `mmdLoadString` function loads a markdown document from the specified
+string.  The function understands the CommonMark syntax and Jekyll metadata.
 
 The return value is a pointer to the root document node on success or `NULL` on
 failure.  Due to the nature of markdown, the only failures are out-of-memory
