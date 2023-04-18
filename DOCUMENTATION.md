@@ -7,15 +7,15 @@ version: 1.9
 
 # Contents
 
-[How to Use the mmd "Library"](@)
-- [Overview](@)
-- [Navigating the Document Tree](@)
-- [Retrieving Document Metadata](@)
-- [Freeing Memory](@)
+[How to Use the mmd "Library"](#how-to-use-the-mmd-library)
+- [Overview](#overview)
+- [Navigating the Document Tree](#navigating-the-document-tree)
+- [Retrieving Document Metadata](#retrieving-document-metadata)
+- [Freeing Memory](#freeing-memory)
 
-[Example: Generating HTML from Markdown](@)
+[Example: Generating HTML from Markdown](#example-generating-html-from-markdown)
 
-[Reference](@)
+[Reference](#reference)
 
 
 # How to Use the mmd "Library"
@@ -170,10 +170,10 @@ The `mmdFree` function frees the memory used for the document tree:
 One of the most common uses for markdown is for generating HTML, and the
 `testmmd` program included with `mmd` does exactly that using four functions:
 
-- [write_block - Write Block Nodes](@)
-- [write_leaf - Write Leaf Nodes for a Block](@)
-- [write_html - Write Text and URL Values](@)
-- [make_anchor - Make a HTML Anchor String from Text](@)
+- [write_block - Write Block Nodes](#write_block-write-block-nodes)
+- [write_leaf - Write Leaf Nodes for a Block](##write_leaf-write-leaf-nodes-for-a-block)
+- [write_html - Write Text and URL Values](#write_html-write-text-and-url-values)
+- [make_anchor - Make a HTML Anchor String from Text](#make_anchor-make-a-html-anchor-string-from-text)
 
 ## write_block - Write Block Nodes
 
@@ -530,27 +530,27 @@ Here is the complete function:
 
 # Reference
 
-- [mmd_t](@)
-- [mmd_option_t](@)
-- [mmd_type_t](@)
-- [mmdCopyAllText](@)
-- [mmdFree](@)
-- [mmdGetExtra](@)
-- [mmdGetFirstChild](@)
-- [mmdGetLastChild](@)
-- [mmdGetMetadata](@)
-- [mmdGetNextSibling](@)
-- [mmdGetOptions](@)
-- [mmdGetParent](@)
-- [mmdGetPrevSibling](@)
-- [mmdGetText](@)
-- [mmdGetType](@)
-- [mmdGetURL](@)
-- [mmdGetWhitespace](@)
-- [mmdIsBlock](@)
-- [mmdLoad](@)
-- [mmdLoadFile](@)
-- [mmdSetOptions](@)
+- [mmd\_t](#mmd\_t)
+- [mmd\_option\_t](#mmd\_option\_t)
+- [mmd\_type\_t](#mmd\_type\_t)
+- [mmdCopyAllText](#mmdcopyalltext)
+- [mmdFree](#mmdfree)
+- [mmdGetExtra](#mmdgetextra)
+- [mmdGetFirstChild](#mmdgetfirstchild)
+- [mmdGetLastChild](#mmdgetlastchild)
+- [mmdGetMetadata](#mmdgetmetadata)
+- [mmdGetNextSibling](#mmdgetnextsibling)
+- [mmdGetOptions](#mmdgetoptions)
+- [mmdGetParent](#mmdgetparent)
+- [mmdGetPrevSibling](#mmdgetprevsibling)
+- [mmdGetText](#mmdgettext)
+- [mmdGetType](#mmdgettype)
+- [mmdGetURL](#mmdgeturl)
+- [mmdGetWhitespace](#mmdgetwhitespace)
+- [mmdIsBlock](#mmdisblock)
+- [mmdLoad](#mmdload)
+- [mmdLoadFile](#mmdloadfile)
+- [mmdSetOptions](#mmdsetoptions)
 
 ## mmd\_t
 
@@ -802,8 +802,8 @@ conditions.
     void
     mmdSetOptions(mmd_option_t options);
 
-The `mmdSetOptions` function sets the current load options for [`mmdLoad`](@)
-and [`mmdLoadFile`](@). The options are an [enumerated bit mask](#mmd_option_t)
+The `mmdSetOptions` function sets the current load options for [`mmdLoad`](#mmdload)
+and [`mmdLoadFile`](#mmdloadfile). The options are an [enumerated bit mask](#mmd\_option\_t)
 whose values are:
 
 - `MMD_OPTION_NONE`: No markdown extensions are enabled when loading.
