@@ -5,8 +5,6 @@ mmd - Miniature Markdown Library
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/mmd)
 [![Build Status](https://img.shields.io/github/workflow/status/michaelrsweet/mmd/Build)](https://github.com/michaelrsweet/mmd/actions/workflows/build.yml)
 [![Coverity Scan Status](https://img.shields.io/coverity/scan/22387.svg)](https://scan.coverity.com/projects/michaelrsweet-mmd)
-[![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/context:cpp)
-[![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/michaelrsweet/mmd)](https://lgtm.com/projects/g/michaelrsweet/mmd/)
 
 `mmd` is a miniature markdown parsing "library" consisting of a single C source
 file and accompanying header file.  `mmd` mostly conforms to the [CommonMark][]
@@ -85,6 +83,7 @@ Changes in v2.0
 
 - Added `mxmlLoadString` API and added a document pointer to the other load
   functions to allow concatenation of markdown files.
+- Fixed an issue with headings directly after a table.
 
 
 Changes in v1.9

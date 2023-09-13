@@ -3,7 +3,7 @@
  *
  *     https://github.com/michaelrsweet/mmd
  *
- * Copyright © 2017-2022 by Michael R Sweet.
+ * Copyright © 2017-2023 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
@@ -557,7 +557,14 @@ mmdLoadFile(mmd_t *root,
     DEBUG2_printf("	line indent=%d\n", (int)(lineptr - line));
     DEBUG2_printf("	stackptr=%d\n", (int)(stackptr - stack));
 
-    if (*lineptr == '>' && (lineptr - linestart) < 4)
+    if (!*lineptr && stackptr->parent->type == MMD_TYPE_TABLE)
+    {
+      DEBUG2_puts("END TABLE\n");
+      stackptr --;
+      block = NULL;
+      continue;
+    }
+    else if (*lineptr == '>' && (lineptr - linestart) < 4)
     {
      /*
       * Block quote.  See if there is an existing blockquote...
