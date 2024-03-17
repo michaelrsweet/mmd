@@ -77,7 +77,9 @@ Generate a man page from "example.md":
 
 Use **mmdutil** as a markdown to HTML filter:
 
-    mymarkdownprog | mmdutil - | myhtmlprog
+```
+mymarkdownprog | mmdutil - | myhtmlprog
+```
 
 
 # See Also
