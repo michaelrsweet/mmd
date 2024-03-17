@@ -7,6 +7,8 @@ Changes in v2.0
 
 - Added `mxmlLoadString` API and added a document pointer to the other load
   functions to allow concatenation of markdown files.
+- Added mmdutil "-" filename/option to read markdown from stdin (Issue #16)
+- Added mmdutil "--no-title" option to disable the generated HTML title page.
 - Fixed an issue with headings directly after a table.
 
 

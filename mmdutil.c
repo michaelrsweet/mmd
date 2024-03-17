@@ -28,6 +28,7 @@
 #include "mmd.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
@@ -63,9 +64,10 @@ static int		build_toc(mmd_t *parent, int toc_levels, int num_toc, toc_t **toc);
 
 static const char	*html_anchor(const char *text);
 static void		html_block(FILE *outfp, mmd_t *parent);
-static void		html_head(FILE *outfp, const char *cssfile, const char *coverfile, const char *title, const char *copyright, const char *author, const char *version);
+static void		html_head(FILE *outfp, const char *cssfile, const char *title, const char *copyright, const char *author, const char *version);
 static void		html_leaf(FILE *outfp, mmd_t *node);
 static void		html_puts(FILE *outfp, const char *s);
+static void		html_titlepage(FILE *outfp, const char *coverfile, const char *title, const char *copyright, const char *author, const char *version);
 static void		html_toc(FILE *outfp, int num_toc, toc_t *toc);
 
 static void		man_block(FILE *outfp, mmd_t *parent);
@@ -90,6 +92,7 @@ main(int  argc,				/* I - Number of command-line arguments */
   FILE		*outfp;			/* Output file */
   format_t	format = FORMAT_HTML;	/* Output format */
   int		section = 0;		/* Section number for man page output */
+  bool		titlepage = true;	/* Show a title page? */
   const char	*coverfile = NULL,	/* Cover image filename */
 		*cssfile = NULL,	/* CSS filename */
 		*title = NULL,		/* Title */
@@ -177,6 +180,11 @@ main(int  argc,				/* I - Number of command-line arguments */
 	}
 
 	format = FORMAT_MAN;
+      }
+      else if (!strcmp(argv[i], "--no-title"))
+      {
+        // Disable title page
+        titlepage = false;
       }
       else if (!strcmp(argv[i], "--toc"))
       {
@@ -290,7 +298,9 @@ main(int  argc,				/* I - Number of command-line arguments */
   switch (format)
   {
     case FORMAT_HTML :
-	html_head(outfp, cssfile, coverfile, title, copyright, author, version);
+	html_head(outfp, cssfile, title, copyright, author, version);
+	if (titlepage)
+	  html_titlepage(outfp, coverfile, title, copyright, author, version);
 
 	if (front)
 	  html_block(outfp, front);
@@ -567,7 +577,6 @@ html_block(FILE	 *outfp,		/* I - Output file */
 static void
 html_head(FILE	     *outfp,		/* I - Output file */
 	  const char *cssfile,		/* I - CSS file, if any */
-	  const char *coverfile,	/* I - Cover image, if any */
 	  const char *title,		/* I - Title of book, if any */
 	  const char *copyright,	/* I - Copyright, if any */
 	  const char *author,		/* I - Author, if any */
@@ -690,36 +699,6 @@ html_head(FILE	     *outfp,		/* I - Output file */
   fputs("--></style>\n", outfp);
   fputs("  </head>\n", outfp);
   fputs("  <body>\n", outfp);
-
-  if (coverfile)
-  {
-    fputs("    <img src=\"", outfp);
-    html_puts(outfp, coverfile);
-    fputs("\">\n", outfp);
-  }
-
-  fputs("    <h1 class=\"title\">", outfp);
-  html_puts(outfp, title ? title : "Unknown");
-  fputs("</h1>\n", outfp);
-
-  if (version)
-  {
-    fputs("    <p class=\"title\">Version ", outfp);
-    html_puts(outfp, version);
-    fputs("</p>\n", outfp);
-  }
-  if (author)
-  {
-    fputs("    <p class=\"title\">by ", outfp);
-    html_puts(outfp, author);
-    fputs("</p>\n", outfp);
-  }
-  if (copyright)
-  {
-    fputs("    <p class=\"title\">", outfp);
-    html_puts(outfp, copyright);
-    fputs("</p>\n", outfp);
-  }
 }
 
 
@@ -869,6 +848,51 @@ html_puts(FILE	     *outfp,		/* I - Output file */
       putc(*text, outfp);
 
     text ++;
+  }
+}
+
+
+/*
+ * 'html_titlepage()' - Write HTML title page.
+ */
+
+static void
+html_titlepage(FILE	  *outfp,	/* I - Output file */
+	       const char *coverfile,	/* I - Cover image, if any */
+	       const char *title,	/* I - Title of book, if any */
+	       const char *copyright,	/* I - Copyright, if any */
+	       const char *author,	/* I - Author, if any */
+	       const char *version)	/* I - Version of book, if any */
+{
+  // Add a simple title page at the top of the HTML file...
+  if (coverfile)
+  {
+    fputs("    <img src=\"", outfp);
+    html_puts(outfp, coverfile);
+    fputs("\">\n", outfp);
+  }
+
+  fputs("    <h1 class=\"title\">", outfp);
+  html_puts(outfp, title ? title : "Unknown");
+  fputs("</h1>\n", outfp);
+
+  if (version)
+  {
+    fputs("    <p class=\"title\">Version ", outfp);
+    html_puts(outfp, version);
+    fputs("</p>\n", outfp);
+  }
+  if (author)
+  {
+    fputs("    <p class=\"title\">by ", outfp);
+    html_puts(outfp, author);
+    fputs("</p>\n", outfp);
+  }
+  if (copyright)
+  {
+    fputs("    <p class=\"title\">", outfp);
+    html_puts(outfp, copyright);
+    fputs("</p>\n", outfp);
   }
 }
 

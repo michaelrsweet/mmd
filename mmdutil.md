@@ -12,9 +12,9 @@ mmdutil - mini markdown utility program.
 
 # Synopsis
 
-mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\] \[--toc LEVELS\] \[-o FILENAME.html\] FILENAME.md \[... FILENAME.md\]
+mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\] \[--no-title\] \[--toc LEVELS\] \[-o FILENAME.html\] FILENAME.md \[... FILENAME.md\]
 
-mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\] \[--toc LEVELS\] \[-o FILENAME.html\] -
+mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\]  \[--no-title\] \[--toc LEVELS\] \[-o FILENAME.html\] -
 
 mmdutil \[--front FILENAME.md\] \[--man SECTION\] \[-o FILENAME.man\] FILENAME.md \[... FILENAME.md\]
 
@@ -49,6 +49,7 @@ The following options are recognized by **mmdutil**:
 - "--front FILENAME.md" specifies front matter for the output.
 - "--help" shows program usage.
 - "--man SECTION" produces man page output for the specified section.
+- "--no-title" disables the title page for HTML output.
 - "--toc LEVELS" produces a table of contents with the specified number of
   levels.
 - "--version" shows the program version.
