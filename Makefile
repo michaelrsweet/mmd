@@ -75,7 +75,7 @@ testmmd:	mmd.o testmmd.o testmmd.md
 
 test:	testmmd
 	./testmmd testmmd.md >testmmd.html 2>testmmd.log
-	./testmmd - <testmmd.md >testmmd.html 2>>testmmd.log
+	./testmmd <testmmd.md >testmmd.html 2>>testmmd.log
 
 $(OBJS):	mmd.h Makefile
 

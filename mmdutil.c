@@ -1,29 +1,29 @@
-/*
- * Mini markdown utility.
- *
- *     https://github.com/michaelrsweet/mmd
- *
- * Usage:
- *
- *     mmdutil [options] filename.md [... filenameN.md]
- *     mmdutil [options] -
- *
- * Options:
- *
- *    --cover filename.ext	Specify cover image.
- *    --css filename.css	Specify style sheet.
- *    --front filename.md	Specify frontmatter file.
- *    --help			Show usage.
- *    --man section		Produce man page output.
- *    --toc levels		Produce a table of contents.
- *    --version			Show version.
- *    -o filename.ext		Specify output file (default is stdout).
- *
- * Copyright © 2017-2024 by Michael R Sweet.
- *
- * Licensed under Apache License v2.0.	See the file "LICENSE" for more
- * information.
- */
+//
+// Mini markdown utility.
+//
+//     https://www.msweet.org/mmd
+//
+// Usage:
+//
+//     mmdutil [options] filename.md [... filenameN.md]
+//     mmdutil [options] -
+//
+// Options:
+//
+//    --cover filename.ext	Specify cover image.
+//    --css filename.css	Specify style sheet.
+//    --front filename.md	Specify frontmatter file.
+//    --help			Show usage.
+//    --man section		Produce man page output.
+//    --toc levels		Produce a table of contents.
+//    --version			Show version.
+//    -o filename.ext		Specify output file (default is stdout).
+//
+// Copyright © 2017-2024 by Michael R Sweet.
+//
+// Licensed under Apache License v2.0.	See the file "LICENSE" for more
+// information.
+//
 
 #include "mmd.h"
 #include <stdio.h>
@@ -36,29 +36,29 @@
 
 #if _WIN32
 #  define localtime_r(t,tm) localtime_s(tm,t)
-#endif /* _WIN32 */
+#endif // _WIN32
 
 
-/*
- * Local types...
- */
+//
+// Local types...
+//
 
 typedef enum
 {
-  FORMAT_HTML,				/* Output HTML */
-  FORMAT_MAN				/* Output man page */
+  FORMAT_HTML,				// Output HTML
+  FORMAT_MAN				// Output man page
 } format_t;
 
 typedef struct toc_s
 {
-  int	level;				/* Heading level */
-  char	*heading;			/* Heading text */
+  int	level;				// Heading level
+  char	*heading;			// Heading text
 } toc_t;
 
 
-/*
- * Local functions...
- */
+//
+// Local functions...
+//
 
 static int		build_toc(mmd_t *parent, int toc_levels, int num_toc, toc_t **toc);
 
@@ -78,38 +78,38 @@ static void		man_puts(FILE *outfp, const char *s, int allcaps);
 static void		usage(void);
 
 
-/*
- * 'main()' - Main entry for mini markdown utility.
- */
+//
+// 'main()' - Main entry for mini markdown utility.
+//
 
-int					/* O - Exit status */
-main(int  argc,				/* I - Number of command-line arguments */
-     char *argv[])			/* I - Command-line arguments */
+int					// O - Exit status
+main(int  argc,				// I - Number of command-line arguments
+     char *argv[])			// I - Command-line arguments
 {
-  int		i;			/* Looping var */
-  const char	*opt,			/* Current option */
-		*outfile = NULL;	/* Output filename */
-  FILE		*outfp;			/* Output file */
-  format_t	format = FORMAT_HTML;	/* Output format */
-  int		section = 0;		/* Section number for man page output */
-  bool		titlepage = true;	/* Show a title page? */
-  const char	*coverfile = NULL,	/* Cover image filename */
-		*cssfile = NULL,	/* CSS filename */
-		*title = NULL,		/* Title */
-		*copyright = NULL,	/* Copyright */
-		*author = NULL,		/* Author */
-		*version = NULL;	/* Document version */
-  mmd_t		*front = NULL,		/* Cover page/frontmatter */
-		*files[100];		/* "Body" files */
-  int		num_files = 0,		/* Number of files */
-		toc_levels = 0,		/* Number of table of contents levels */
-		num_toc = 0;		/* Number of table of contents entries */
-  toc_t		*toc = NULL;		/* Table of contents entries */
+  int		i;			// Looping var
+  const char	*opt,			// Current option
+		*outfile = NULL;	// Output filename
+  FILE		*outfp;			// Output file
+  format_t	format = FORMAT_HTML;	// Output format
+  int		section = 0;		// Section number for man page output
+  bool		titlepage = true;	// Show a title page?
+  const char	*coverfile = NULL,	// Cover image filename
+		*cssfile = NULL,	// CSS filename
+		*title = NULL,		// Title
+		*copyright = NULL,	// Copyright
+		*author = NULL,		// Author
+		*version = NULL;	// Document version
+  mmd_t		*front = NULL,		// Cover page/frontmatter
+		*files[100];		// "Body" files
+  int		num_files = 0,		// Number of files
+		toc_levels = 0,		// Number of table of contents levels
+		num_toc = 0;		// Number of table of contents entries
+  toc_t		*toc = NULL;		// Table of contents entries
 
 
- /*
-  * Process command-line arguments...
-  */
+  //
+  // Process command-line arguments...
+//
 
   for (i = 1; i < argc; i ++)
   {
@@ -281,9 +281,9 @@ main(int  argc,				/* I - Number of command-line arguments */
   else
     outfp = stdout;
 
- /*
-  * Generate a table of contents...
-  */
+  //
+  // Generate a table of contents...
+//
 
   if (toc_levels > 0)
   {
@@ -291,9 +291,9 @@ main(int  argc,				/* I - Number of command-line arguments */
       num_toc = build_toc(files[i], toc_levels, num_toc, &toc);
   }
 
- /*
-  * Write everything...
-  */
+  //
+  // Write everything...
+//
 
   switch (format)
   {
@@ -340,21 +340,21 @@ main(int  argc,				/* I - Number of command-line arguments */
 }
 
 
-/*
- * 'build_toc()' - Scan for headings to include in the table of contents.
- */
+//
+// 'build_toc()' - Scan for headings to include in the table of contents.
+//
 
-static int				/* O  - Number of table of contents entries */
-build_toc(mmd_t *parent,		/* I  - Parent node */
-	  int	toc_levels,		/* I  - Number of levels in table of contents */
-	  int	num_toc,		/* I  - Number of table of contents entries */
-	  toc_t **toc)			/* IO - Table of contents entries */
+static int				// O  - Number of table of contents entries
+build_toc(mmd_t *parent,		// I  - Parent node
+	  int	toc_levels,		// I  - Number of levels in table of contents
+	  int	num_toc,		// I  - Number of table of contents entries
+	  toc_t **toc)			// IO - Table of contents entries
 {
-  mmd_t		*node,			/* Current node */
-		*next;			/* Next node */
-  mmd_type_t	type;			/* Node type */
-  toc_t		*temp;			/* Table of contents entry */
-  int		alloc_toc = num_toc;	/* Allocated entries */
+  mmd_t		*node,			// Current node
+		*next;			// Next node
+  mmd_type_t	type;			// Node type
+  toc_t		*temp;			// Table of contents entry
+  int		alloc_toc = num_toc;	// Allocated entries
 
 
   for (node = mmdGetFirstChild(parent); node; node = next)
@@ -397,15 +397,15 @@ build_toc(mmd_t *parent,		/* I  - Parent node */
 }
 
 
-/*
- * 'html_anchor()' - Make an anchor for internal links.
- */
+//
+// 'html_anchor()' - Make an anchor for internal links.
+//
 
-static const char *			/* O - Anchor string */
-html_anchor(const char *text)		/* I - Text */
+static const char *			// O - Anchor string
+html_anchor(const char *text)		// I - Text
 {
-  char		*bufptr;		/* Pointer into buffer */
-  static char	buffer[1024];		/* Buffer for anchor string */
+  char		*bufptr;		// Pointer into buffer
+  static char	buffer[1024];		// Buffer for anchor string
 
 
   for (bufptr = buffer; *text && bufptr < (buffer + sizeof(buffer) - 1); text ++)
@@ -422,18 +422,18 @@ html_anchor(const char *text)		/* I - Text */
 }
 
 
-/*
- * 'html_block()' - Write a block node as HTML.
- */
+//
+// 'html_block()' - Write a block node as HTML.
+//
 
 static void
-html_block(FILE	 *outfp,		/* I - Output file */
-	   mmd_t *parent)		/* I - Parent node */
+html_block(FILE	 *outfp,		// I - Output file
+	   mmd_t *parent)		// I - Parent node
 {
-  const char	*element,		/* Enclosing element, if any */
-		*hclass = NULL;		/* HTML class, if any */
-  mmd_t		*node;			/* Current child node */
-  mmd_type_t	type;			/* Node type */
+  const char	*element,		// Enclosing element, if any
+		*hclass = NULL;		// HTML class, if any
+  mmd_t		*node;			// Current child node
+  mmd_type_t	type;			// Node type
 
 
   switch (type = mmdGetType(parent))
@@ -538,10 +538,7 @@ html_block(FILE	 *outfp,		/* I - Output file */
 
   if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6)
   {
-   /*
-    * Add an anchor for each heading...
-    */
-
+    // Add an anchor for each heading...
     fprintf(outfp, "	<%s id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
     {
@@ -570,19 +567,19 @@ html_block(FILE	 *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'html_head()' - Write HTML header.
- */
+//
+// 'html_head()' - Write HTML header.
+//
 
 static void
-html_head(FILE	     *outfp,		/* I - Output file */
-	  const char *cssfile,		/* I - CSS file, if any */
-	  const char *title,		/* I - Title of book, if any */
-	  const char *copyright,	/* I - Copyright, if any */
-	  const char *author,		/* I - Author, if any */
-	  const char *version)		/* I - Version of book, if any */
+html_head(FILE	     *outfp,		// I - Output file
+	  const char *cssfile,		// I - CSS file, if any
+	  const char *title,		// I - Title of book, if any
+	  const char *copyright,	// I - Copyright, if any
+	  const char *author,		// I - Author, if any
+	  const char *version)		// I - Version of book, if any
 {
-  FILE *cssfp;				/* CSS file */
+  FILE *cssfp;				// CSS file
 
 
   fputs("<!DOCTYPE html>\n", outfp);
@@ -614,7 +611,7 @@ html_head(FILE	     *outfp,		/* I - Output file */
   {
     if ((cssfp = fopen(cssfile, "r")) != NULL)
     {
-      char line[1024];			/* Line from file */
+      char line[1024];			// Line from file
 
       while (fgets(line, sizeof(line), cssfp))
 	fputs(line, outfp);
@@ -702,17 +699,17 @@ html_head(FILE	     *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'html_leaf()' - Write a leaf node as HTML.
- */
+//
+// 'html_leaf()' - Write a leaf node as HTML.
+//
 
 static void
-html_leaf(FILE	*outfp,			/* I - Output file */
-	  mmd_t *node)			/* I - Leaf node */
+html_leaf(FILE	*outfp,			// I - Output file
+	  mmd_t *node)			// I - Leaf node
 {
-  const char	*element,		/* Encoding element, if any */
-		*text,			/* Text to write */
-		*url;			/* URL to write */
+  const char	*element,		// Encoding element, if any
+		*text,			// Text to write
+		*url;			// URL to write
 
 
   if (mmdGetWhitespace(node))
@@ -823,13 +820,13 @@ html_leaf(FILE	*outfp,			/* I - Output file */
 }
 
 
-/*
- * 'html_puts()' - Write text string as safe HTML.
- */
+//
+// 'html_puts()' - Write text string as safe HTML.
+//
 
 static void
-html_puts(FILE	     *outfp,		/* I - Output file */
-	  const char *text)		/* I - Text string */
+html_puts(FILE	     *outfp,		// I - Output file
+	  const char *text)		// I - Text string
 {
   if (!text)
     return;
@@ -852,17 +849,17 @@ html_puts(FILE	     *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'html_titlepage()' - Write HTML title page.
- */
+//
+// 'html_titlepage()' - Write HTML title page.
+//
 
 static void
-html_titlepage(FILE	  *outfp,	/* I - Output file */
-	       const char *coverfile,	/* I - Cover image, if any */
-	       const char *title,	/* I - Title of book, if any */
-	       const char *copyright,	/* I - Copyright, if any */
-	       const char *author,	/* I - Author, if any */
-	       const char *version)	/* I - Version of book, if any */
+html_titlepage(FILE	  *outfp,	// I - Output file
+	       const char *coverfile,	// I - Cover image, if any
+	       const char *title,	// I - Title of book, if any
+	       const char *copyright,	// I - Copyright, if any
+	       const char *author,	// I - Author, if any
+	       const char *version)	// I - Version of book, if any
 {
   // Add a simple title page at the top of the HTML file...
   if (coverfile)
@@ -897,16 +894,16 @@ html_titlepage(FILE	  *outfp,	/* I - Output file */
 }
 
 
-/*
- * 'html_toc()' - Write the table-of-contents.
- */
+//
+// 'html_toc()' - Write the table-of-contents.
+//
 
 static void
-html_toc(FILE  *outfp,			/* I - Output file */
-	 int   num_toc,			/* I - Number of table of contents entries */
-	 toc_t *toc)			/* I - Table of contents entries */
+html_toc(FILE  *outfp,			// I - Output file
+	 int   num_toc,			// I - Number of table of contents entries
+	 toc_t *toc)			// I - Table of contents entries
 {
-  int	level = 1;			/* Current indentation level */
+  int	level = 1;			// Current indentation level
 
 
   fputs("    <h1 class=\"title\">Table of Contents</h1>\n", outfp);
@@ -956,16 +953,16 @@ html_toc(FILE  *outfp,			/* I - Output file */
 }
 
 
-/*
- * 'man_block()' - Write a block node as man page source.
- */
+//
+// 'man_block()' - Write a block node as man page source.
+//
 
 static void
-man_block(FILE	 *outfp,		/* I - Output file */
-	  mmd_t *parent)		/* I - Parent node */
+man_block(FILE	 *outfp,		// I - Output file
+	  mmd_t *parent)		// I - Parent node
 {
-  mmd_t		*node;			/* Current child node */
-  mmd_type_t	type;			/* Node type */
+  mmd_t		*node;			// Current child node
+  mmd_type_t	type;			// Node type
 
 
   type = mmdGetType(parent);
@@ -1014,7 +1011,7 @@ man_block(FILE	 *outfp,		/* I - Output file */
     case MMD_TYPE_METADATA :
 	return;
 
-    case MMD_TYPE_TABLE : /* No table support for man output at present */
+    case MMD_TYPE_TABLE : // No table support for man output at present
 	fputs(".PP\n", outfp);
 	fputs("[Table Omitted]\n", outfp);
         return;
@@ -1035,21 +1032,21 @@ man_block(FILE	 *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'man_head()' - Write man page header.
- */
+//
+// 'man_head()' - Write man page header.
+//
 
 static void
-man_head(FILE	     *outfp,		/* I - Output file */
-	 int        section,		/* I - Man page section */
-	 const char *title,		/* I - Title of book, if any */
-	 const char *copyright,		/* I - Copyright, if any */
-	 const char *author,		/* I - Author, if any */
-	 const char *version)		/* I - Version of book, if any */
+man_head(FILE	     *outfp,		// I - Output file
+	 int        section,		// I - Man page section
+	 const char *title,		// I - Title of book, if any
+	 const char *copyright,		// I - Copyright, if any
+	 const char *author,		// I - Author, if any
+	 const char *version)		// I - Version of book, if any
 {
-  time_t	curtime;		/* Current time */
-  struct tm	curdate;		/* Current date */
-  const char	*source_date_epoch;	/* SOURCE_DATE_EPOCH environment variable */
+  time_t	curtime;		// Current time
+  struct tm	curdate;		// Current date
+  const char	*source_date_epoch;	// SOURCE_DATE_EPOCH environment variable
 
 
   fprintf(outfp, ".\" Man page for %s version %s.\n", title ? title : "unknown", version ? version : "unknown");
@@ -1068,17 +1065,17 @@ man_head(FILE	     *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'man_leaf()' - Write a leaf node as man page source.
- */
+//
+// 'man_leaf()' - Write a leaf node as man page source.
+//
 
 static void
-man_leaf(FILE  *outfp,			/* I - Output file */
-         mmd_t *node)			/* I - Leaf node */
+man_leaf(FILE  *outfp,			// I - Output file
+         mmd_t *node)			// I - Leaf node
 {
-  mmd_type_t	ptype;			/* Parent node type */
-  const char    *text,                  /* Text to write */
-		*suffix = NULL;		/* Trailing string */
+  mmd_type_t	ptype;			// Parent node type
+  const char    *text,                  // Text to write
+		*suffix = NULL;		// Trailing string
 
 
   text = mmdGetText(node);
@@ -1135,26 +1132,23 @@ man_leaf(FILE  *outfp,			/* I - Output file */
 }
 
 
-/*
- * 'man_puts()' - Write a string as safe man page source.
- */
+//
+// 'man_puts()' - Write a string as safe man page source.
+//
 
 static void
-man_puts(FILE       *outfp,		/* I - Output file */
-         const char *s,			/* I - Text string */
-         int        allcaps)		/* I - Output in all caps? */
+man_puts(FILE       *outfp,		// I - Output file
+         const char *s,			// I - Text string
+         int        allcaps)		// I - Output in all caps?
 {
-  int	ch;				/* Character */
+  int	ch;				// Character
 
 
   while (*s)
   {
     if ((*s & 0xe0) == 0xc0 && (s[1] & 0x80))
     {
-     /*
-      * 2-byte UTF-8...
-      */
-
+      // 2-byte UTF-8...
       ch = ((*s & 0x1f) << 6) | (s[1] & 0x3f);
       s += 2;
 
@@ -1162,10 +1156,7 @@ man_puts(FILE       *outfp,		/* I - Output file */
     }
     else if ((*s & 0xf0) == 0xe0 && (s[1] & 0x80) && (s[2] & 0x80))
     {
-     /*
-      * 3-byte UTF-8...
-      */
-
+      // 3-byte UTF-8...
       ch = ((((*s & 0x1f) << 6) | (s[1] & 0x3f)) << 6) | (s[2] & 0x3f);
       s += 3;
 
@@ -1173,10 +1164,7 @@ man_puts(FILE       *outfp,		/* I - Output file */
     }
     else if ((*s & 0xf8) == 0xf0 && (s[1] & 0x80) && (s[2] & 0x80) && (s[3] & 0x80))
     {
-     /*
-      * 4-byte UTF-8...
-      */
-
+      // 4-byte UTF-8...
       ch = ((((((*s & 0x1f) << 6) | (s[1] & 0x3f)) << 6) | (s[2] & 0x3f)) << 6) | (s[3] & 0x3f);
       s += 4;
 
@@ -1196,9 +1184,9 @@ man_puts(FILE       *outfp,		/* I - Output file */
 }
 
 
-/*
- * 'usage()' - Show program usage.
- */
+//
+// 'usage()' - Show program usage.
+//
 
 static void
 usage(void)

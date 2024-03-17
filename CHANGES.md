@@ -5,10 +5,12 @@ Changes in mmd
 Changes in v2.0
 ---------------
 
-- Added `mxmlLoadString` API and added a document pointer to the other load
-  functions to allow concatenation of markdown files.
+- Added `mxmlLoadIO` and `mxmlLoadString` APIs (Issue #12)
 - Added mmdutil "-" filename/option to read markdown from stdin (Issue #16)
+- Added a document pointer to the other load functions to allow concatenation of
+  markdown files.
 - Added mmdutil "--no-title" option to disable the generated HTML title page.
+- Updated `mmdGetWhitespace` and `mmdIsBlock` functions to return `bool` values.
 - Fixed an issue with headings directly after a table.
 
 

@@ -1,36 +1,36 @@
-/*
- * Unit test program for Mini Markdown library.
- *
- *     https://github.com/michaelrsweet/mmd
- *
- * Usage:
- *
- *     ./testmmd [--ext {all,none}] [--help] [--only-body] [--spec]
- *               [-o filename.html] filename.md
- *
- * Copyright © 2017-2024 by Michael R Sweet.
- *
- * Licensed under Apache License v2.0.  See the file "LICENSE" for more
- * information.
- */
+//
+// Unit test program for Mini Markdown library.
+//
+//     https://www.msweet.org/mmd
+//
+// Usage:
+//
+//     ./testmmd [--ext {all,none}] [--help] [--only-body] [--spec]
+//               [-o filename.html] filename.md
+//
+// Copyright © 2017-2024 by Michael R Sweet.
+//
+// Licensed under Apache License v2.0.  See the file "LICENSE" for more
+// information.
+//
 
 #include "mmd.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 
-/*
- * Local globals...
- */
+//
+// Local globals...
+//
 
-static int		spec_mode = 0;	/* Output HTML according to the CommonMark spec */
+static bool		spec_mode = false;
+					// Output HTML according to the CommonMark spec
 
 
-/*
- * Local functions...
- */
+//
+// Local functions...
+//
 
 static void		add_spec_text(char *dst, const char *src, size_t dstsize);
 static void		indent_puts(FILE *logfile, const char *text, int cursor);
@@ -43,20 +43,20 @@ static void		write_html(FILE *fp, const char *s);
 static void		write_leaf(FILE *fp, mmd_t *node);
 
 
-/*
- * 'main()' - Main entry for unit test program.
- */
+//
+// 'main()' - Main entry for unit test program.
+//
 
-int					/* O - Exit status */
-main(int  argc,				/* I - Number of command-line arguments */
-     char *argv[])			/* I - Command-line arguments */
+int					// O - Exit status
+main(int  argc,				// I - Number of command-line arguments
+     char *argv[])			// I - Command-line arguments
 {
-  int		i;			/* Looping var */
-  int		only_body = 0;		/* Only output body content? */
-  FILE		*fp = stdout;		/* Output file */
-  const char	*filename = NULL;	/* File to load */
-  mmd_t         *doc;                   /* Document */
-  const char    *title;                 /* Title */
+  int		i;			// Looping var
+  int		only_body = 0;		// Only output body content?
+  FILE		*fp = stdout;		// Output file
+  const char	*filename = NULL;	// File to load
+  mmd_t         *doc;                   // Document
+  const char    *title;                 // Title
 
 
   for (i = 1; i < argc; i ++)
@@ -110,7 +110,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     }
     else if (!strcmp(argv[i], "--spec"))
     {
-      spec_mode = 1;
+      spec_mode = true;
     }
     else if (argv[i][0] == '-')
     {
@@ -218,19 +218,19 @@ main(int  argc,				/* I - Number of command-line arguments */
 }
 
 
-/*
- * 'add_spec_text()' - Add text from a specification file, substituting
- *                     placeholders as needed.
- */
+//
+// 'add_spec_text()' - Add text from a specification file, substituting
+//                     placeholders as needed.
+//
 
 static void
-add_spec_text(char       *dst,		/* I - Destination buffer */
-              const char *src,		/* I - Source string */
-              size_t     dstsize)	/* I - Size of destination buffer */
+add_spec_text(char       *dst,		// I - Destination buffer
+              const char *src,		// I - Source string
+              size_t     dstsize)	// I - Size of destination buffer
 {
-  int	col = 0,			/* Current column */
-	in_html = 0;			/* Inside a HTML element? */
-  char	*dstend = dst + dstsize - 1;	/* End of destination buffer */
+  int	col = 0,			// Current column
+	in_html = 0;			// Inside a HTML element?
+  char	*dstend = dst + dstsize - 1;	// End of destination buffer
 
 
   while (*src && dst < dstend)
@@ -272,18 +272,18 @@ add_spec_text(char       *dst,		/* I - Destination buffer */
 }
 
 
-/*
- * 'indent_puts()' - Write a string to the standard output, indenting each line
- *                   by 8 spaces.
- */
+//
+// 'indent_puts()' - Write a string to the standard output, indenting each line
+//                   by 8 spaces.
+//
 
 static void
-indent_puts(FILE       *logfile,	/* I - Log file */
-            const char *text,		/* I - Text to write */
-            int        cursor)		/* I - Location for cursor or -1 if none */
+indent_puts(FILE       *logfile,	// I - Log file
+            const char *text,		// I - Text to write
+            int        cursor)		// I - Location for cursor or -1 if none
 {
-  const char	*start,			/* Start of line */
-		*end;			/* End of line */
+  const char	*start,			// Start of line
+		*end;			// End of line
 
 
   for (start = text; *start; start = end)
@@ -312,28 +312,25 @@ indent_puts(FILE       *logfile,	/* I - Log file */
 }
 
 
-/*
- * 'is_equal()' - Compare two strings, allowing for specific differences.
- */
+//
+// 'is_equal()' - Compare two strings, allowing for specific differences.
+//
 
-static int				/* O - 1 if equal, 0 if not equal */
-is_equal(const char *generated,		/* I - Generated string */
-         const char *expected,		/* I - Expected string */
-         int        *failed_at)		/* O - Where the comparison failed */
+static int				// O - 1 if equal, 0 if not equal
+is_equal(const char *generated,		// I - Generated string
+         const char *expected,		// I - Expected string
+         int        *failed_at)		// O - Where the comparison failed
 {
-  const char	*gptr = generated;	/* Pointer into generated string */
+  const char	*gptr = generated;	// Pointer into generated string
 
 
   while (*gptr && *expected)
   {
     if (*gptr != *expected)
     {
-     /*
-      * The expected list HTML is widely inconsistent in the CommonMark
-      * specification WRT the use of paragraph (<p>) elements.  Allow for some
-      * variation as long as the visual structure is the same.
-      */
-
+      // The expected list HTML is widely inconsistent in the CommonMark
+      // specification WRT the use of paragraph (<p>) elements.  Allow for some
+      // variation as long as the visual structure is the same.
       if (!strncmp(gptr, "\n<p>", 4) && *expected == gptr[4])
       {
         gptr += 4;
@@ -353,11 +350,8 @@ is_equal(const char *generated,		/* I - Generated string */
 
     if (*gptr != *expected && (!isspace(*gptr & 255) || !isspace(*expected & 255)))
     {
-     /*
-      * If the strings don't match at this point and the difference is not in
-      * the type of whitespace used, that is an error...
-      */
-
+      // If the strings don't match at this point and the difference is not in
+      // the type of whitespace used, that is an error...
       break;
     }
 
@@ -371,15 +365,15 @@ is_equal(const char *generated,		/* I - Generated string */
 }
 
 
-/*
- * 'make_anchor()' - Make an anchor for internal links.
- */
+//
+// 'make_anchor()' - Make an anchor for internal links.
+//
 
-static const char *                     /* O - Anchor string */
-make_anchor(const char *text)           /* I - Text */
+static const char *                     // O - Anchor string
+make_anchor(const char *text)           // I - Text
 {
-  char          *bufptr;                /* Pointer into buffer */
-  static char   buffer[1024];           /* Buffer for anchor string */
+  char          *bufptr;                // Pointer into buffer
+  static char   buffer[1024];           // Buffer for anchor string
 
 
   if (!text)
@@ -399,25 +393,25 @@ make_anchor(const char *text)           /* I - Text */
 }
 
 
-/*
- * 'run_spec()' - Run through all of the examples in the specified markdown
- *                file.
- */
+//
+// 'run_spec()' - Run through all of the examples in the specified markdown
+//                file.
+//
 
-static int				/* O - Exit status */
-run_spec(const char *filename,		/* I - Markdown spec file */
-         FILE       *logfile)		/* I - Log file */
+static int				// O - Exit status
+run_spec(const char *filename,		// I - Markdown spec file
+         FILE       *logfile)		// I - Log file
 {
-  FILE	*fp;				/* File to read from */
-  int	number = 0,			/* Current example number */
-	passed = 0,			/* Number of passed tests */
-	skipped = 0,			/* Number of skipped tests */
-	failed = 0;			/* Number of failed tests */
-  char	line[1024],			/* Line from file */
-	markdown[4096],			/* Example markdown */
-	html[4096],			/* Expected HTML */
-	*mptr,				/* Pointer into markdown */
-	*hptr;				/* Pointer into HTML */
+  FILE	*fp;				// File to read from
+  int	number = 0,			// Current example number
+	passed = 0,			// Number of passed tests
+	skipped = 0,			// Number of skipped tests
+	failed = 0;			// Number of failed tests
+  char	line[1024],			// Line from file
+	markdown[4096],			// Example markdown
+	html[4096],			// Expected HTML
+	*mptr,				// Pointer into markdown
+	*hptr;				// Pointer into HTML
 
 
   if (!filename)
@@ -434,11 +428,8 @@ run_spec(const char *filename,		/* I - Markdown spec file */
   {
     if (!strncmp(line, "````", 4) && strstr(line, "``` example"))
     {
-     /*
-      * Start of example...
-      */
-
-      int is_html = 0;			/* 0 = markdown, 1 = HTML */
+      // Start of example...
+      int is_html = 0;			// 0 = markdown, 1 = HTML
 
       number ++;
       fprintf(logfile, "    E%04d: ", number);
@@ -488,16 +479,13 @@ run_spec(const char *filename,		/* I - Markdown spec file */
       }
       else
       {
-       /*
-        * Run a test...
-        */
-
-        FILE	*infile,		/* Input file */
-		*outfile;		/* Output file */
-        char	outbuffer[4097];	/* Output buffer */
-        mmd_t	*doc;			/* Markdown document */
-        int	test_passed = 0,	/* Did the test pass? */
-		failed_at = -1;		/* Offset of failure */
+        // Run a test...
+        FILE	*infile,		// Input file
+		*outfile;		// Output file
+        char	outbuffer[4097];	// Output buffer
+        mmd_t	*doc;			// Markdown document
+        int	test_passed = 0,	// Did the test pass?
+		failed_at = -1;		// Offset of failure
 
 
         infile  = fmemopen(markdown, strlen(markdown), "r");
@@ -546,15 +534,12 @@ run_spec(const char *filename,		/* I - Markdown spec file */
     }
     else if (line[0] == '#')
     {
-     /*
-      * Show heading...
-      */
-
-      char *lptr;			/* Pointer into line */
+      // Show heading...
+      char *lptr;			// Pointer into line
 
       for (lptr = line; *lptr; lptr ++)
         if (*lptr != '#' && !isspace(*lptr & 255))
-          break;			/* Find start of heading... */
+          break;			// Find start of heading...
 
       fputs(lptr, logfile);
     }
@@ -572,9 +557,9 @@ run_spec(const char *filename,		/* I - Markdown spec file */
 }
 
 
-/*
- * 'usage()' - Show usage...
- */
+//
+// 'usage()' - Show usage...
+//
 
 static void
 usage(void)
@@ -591,18 +576,18 @@ usage(void)
 }
 
 
-/*
- * 'write_block()' - Write a block node as HTML.
- */
+//
+// 'write_block()' - Write a block node as HTML.
+//
 
 static void
-write_block(FILE  *fp,			/* I - Output file */
-            mmd_t *parent)              /* I - Parent node */
+write_block(FILE  *fp,			// I - Output file
+            mmd_t *parent)              // I - Parent node
 {
-  const char    *element,               /* Enclosing element, if any */
-		*hclass = NULL;		/* HTML class, if any */
-  mmd_t         *node;                  /* Current child node */
-  mmd_type_t    type;                   /* Node type */
+  const char    *element,               // Enclosing element, if any
+		*hclass = NULL;		// HTML class, if any
+  mmd_t         *node;                  // Current child node
+  mmd_type_t    type;                   // Node type
 
 
   switch (type = mmdGetType(parent))
@@ -707,10 +692,7 @@ write_block(FILE  *fp,			/* I - Output file */
 
   if (type >= MMD_TYPE_HEADING_1 && type <= MMD_TYPE_HEADING_6 && !spec_mode)
   {
-   /*
-    * Add an anchor for each heading...
-    */
-
+    // Add an anchor for each heading...
     fprintf(fp, "<%s id=\"", element);
     for (node = mmdGetFirstChild(parent); node; node = mmdGetNextSibling(node))
     {
@@ -737,13 +719,13 @@ write_block(FILE  *fp,			/* I - Output file */
 }
 
 
-/*
- * 'write_html()' - Write text as HTML.
- */
+//
+// 'write_html()' - Write text as HTML.
+//
 
 static void
-write_html(FILE       *fp,		/* I - Output file */
-           const char *text)            /* I - Text string */
+write_html(FILE       *fp,		// I - Output file
+           const char *text)            // I - Text string
 {
   if (!text)
     return;
@@ -766,20 +748,20 @@ write_html(FILE       *fp,		/* I - Output file */
 }
 
 
-/*
- * 'write_leaf()' - Write a leaf node as HTML.
- */
+//
+// 'write_leaf()' - Write a leaf node as HTML.
+//
 
 static void
-write_leaf(FILE  *fp,			/* I - Output file */
-           mmd_t *node)                 /* I - Leaf node */
+write_leaf(FILE  *fp,			// I - Output file
+           mmd_t *node)                 // I - Leaf node
 {
-  mmd_type_t	type,			/* Current leaf node type */
-		prev_type,		/* Previous leaf node type */
-		next_type;		/* Next leaf node type */
-  const char    *element,               /* Encoding element, if any */
-                *text,                  /* Text to write */
-                *url;                   /* URL to write */
+  mmd_type_t	type,			// Current leaf node type
+		prev_type,		// Previous leaf node type
+		next_type;		// Next leaf node type
+  const char    *element,               // Encoding element, if any
+                *text,                  // Text to write
+                *url;                   // URL to write
 
 
   if (mmdGetWhitespace(node))

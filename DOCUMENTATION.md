@@ -531,6 +531,7 @@ Here is the complete function:
 # Reference
 
 - [mmd_t](@)
+- [mmd_iocb_t](@)
 - [mmd_option_t](@)
 - [mmd_type_t](@)
 - [mmdCopyAllText](@)
@@ -550,6 +551,8 @@ Here is the complete function:
 - [mmdIsBlock](@)
 - [mmdLoad](@)
 - [mmdLoadFile](@)
+- [mmdLoadIO](@)
+- [mmdLoadString](@)
 - [mmdSetOptions](@)
 
 ## mmd\_t
@@ -559,6 +562,15 @@ Here is the complete function:
 The `mmd_t` object represents a single node within a markdown document.  Each
 node has an associated type and may have text, link, siblings, children, and
 a parent.
+
+
+## mmd\_iocb\_t
+
+    typedef size_t (*mmd_iocb_t)(void *cbdata, char *buffer, size_t bytes);
+
+The `mmd_iocb_t` type represents an I/O callback function that is used to read
+data with the [`mmdLoadIO`](@) function.  The function copies up to `bytes`
+bytes from the source to the `buffer` and returns the number of bytes copied.
 
 
 ## mmd\_option\_t
@@ -573,7 +585,8 @@ a parent.
     typedef unsigned mmd_option_t;
 
 The `mmd_option_t` enumeration is a bit mask representing which markdown
-extensions are supported by [`mmdLoad`](@) and [`mmdLoadFile`](@).
+extensions are supported by [`mmdLoad`](@), [`mmdLoadFile`](@),
+[`mmdLoadIO`](@), and [`mmdLoadString`](@).
 
 
 ## mmd\_type\_t
@@ -742,20 +755,20 @@ node.
 
 ## mmdGetWhitespace
 
-    int
+    bool
     mmdGetWhitespace(mmd_t *node);
 
-The `mmdGetWhitespace` function returns `1` if whitespace preceded the specified
-node and `0` otherwise.
+The `mmdGetWhitespace` function returns `true` if whitespace preceded the
+specified node and `false` otherwise.
 
 
 ## mmdIsBlock
 
-    int
+    bool
     mmdIsBlock(mmd_t *node);
 
-The `mmdIsBlock` function returns `1` when the specified node is a markdown
-block and `0` otherwise.
+The `mmdIsBlock` function returns `true` when the specified node is a markdown
+block and `false` otherwise.
 
 
 ## mmdLoad
@@ -763,7 +776,7 @@ block and `0` otherwise.
     mmd_t *
     mmdLoad(mmd_t *root, const char *filename);
 
-The `mmdLoad` function loads a markdown document from the specified file.  The
+The `mmdLoad` function loads a markdown document from the named file.  The
 function understands the CommonMark syntax and Jekyll metadata.
 
 The return value is a pointer to the root document node on success or `NULL` on
@@ -784,10 +797,24 @@ failure.  Due to the nature of markdown, the only failures are out-of-memory
 conditions.
 
 
+## mmdLoadIO
+
+    mmd_t *
+    mmdLoadIO(mmd_t *root, mmd_iocb_t cb, void *cbdata);
+
+The `mmdLoadIO` function loads a markdown document using the specified read
+callback function `cb` and data `cbdata`.  The function understands the
+CommonMark syntax and Jekyll metadata.
+
+The return value is a pointer to the root document node on success or `NULL` on
+failure.  Due to the nature of markdown, the only failures are out-of-memory
+conditions.
+
+
 ## mmdLoadString
 
     mmd_t *
-    mmdLoadFile(mmd_t *root, const char *s);
+    mmdLoadString(mmd_t *root, const char *s);
 
 The `mmdLoadString` function loads a markdown document from the specified
 string.  The function understands the CommonMark syntax and Jekyll metadata.
