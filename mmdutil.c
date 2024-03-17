@@ -6,6 +6,7 @@
  * Usage:
  *
  *     mmdutil [options] filename.md [... filenameN.md]
+ *     mmdutil [options] -
  *
  * Options:
  *
@@ -18,14 +19,10 @@
  *    --version			Show version.
  *    -o filename.ext		Specify output file (default is stdout).
  *
- * Copyright © 2017-2022 by Michael R Sweet.
+ * Copyright © 2017-2024 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
- */
-
-/*
- * Include necessary headers...
  */
 
 #include "mmd.h"
@@ -203,7 +200,7 @@ main(int  argc,				/* I - Number of command-line arguments */
 	return (1);
       }
     }
-    else if (argv[i][0] == '-')
+    else if (argv[i][0] == '-' && argv[i][1])
     {
       for (opt = argv[i] + 1; *opt; opt ++)
       {
@@ -230,7 +227,12 @@ main(int  argc,				/* I - Number of command-line arguments */
     }
     else if (num_files < (int)(sizeof(files) / sizeof(files[0])))
     {
-      if ((files[num_files] = mmdLoad(NULL, argv[i])) == NULL)
+      if (!strcmp(argv[i], "-"))
+        files[num_files] = mmdLoadFile(NULL, stdin);
+      else
+        files[num_files] = mmdLoad(NULL, argv[i]);
+
+      if (files[num_files] == NULL)
       {
 	fprintf(stderr, "mmdutil: Unable to load \"%s\": %s\n", argv[i], strerror(errno));
 	return (1);
