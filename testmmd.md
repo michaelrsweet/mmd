@@ -100,9 +100,13 @@ int main(void)
 
 Link to [mmd web site](https://michaelrsweet.github.io/mmd).
 
-Link to [Heading 1](@).
+Normal link to [Heading 1](@).
 
-Link to [`Heading 2`](@).
+Code link to [`Heading 2`](@).
+
+Emphasized link to [*Heading 3*](@).
+
+Strong link to [**Heading 4**](@).
 
 Implicit link to [reference1][].
 

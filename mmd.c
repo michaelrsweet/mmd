@@ -141,7 +141,7 @@ static size_t	mmd_iocb_file(FILE *fp, char *buffer, size_t bytes);
 static size_t	mmd_iocb_string(const char **s, char *buffer, size_t bytes);
 static size_t	mmd_is_chars(const char *lineptr, const char *chars, size_t minchars);
 static size_t	mmd_is_codefence(char *lineptr, char fence, size_t fencelen, char **language);
-static int	mmd_is_table(_mmd_filebuf_t *file, int indent);
+static bool	mmd_is_table(_mmd_filebuf_t *file, int indent);
 static void	mmd_parse_inline(_mmd_doc_t *doc, mmd_t *parent, char *lineptr);
 static char	*mmd_parse_link(_mmd_doc_t *doc, char *lineptr, char **text, char **url, char **title, char **refname);
 static void	mmd_read_buffer(_mmd_filebuf_t *file);
@@ -1430,7 +1430,7 @@ mmd_is_codefence(char	*lineptr,	// I - Line
 //		      divider for a table.
 //
 
-static int				// O - 1 if this is a table, 0 otherwise
+static bool				// O - `true` if this is a table, `false` otherwise
 mmd_is_table(_mmd_filebuf_t *file,	// I - File to read from
 	     int	    indent)	// I - Indentation of table line
 {
@@ -1447,7 +1447,7 @@ mmd_is_table(_mmd_filebuf_t *file,	// I - File to read from
   }
 
   if ((ptr - file->bufptr - indent) >= 4)
-    return (0);
+    return (false);
 
   while (*ptr)
   {
@@ -1561,24 +1561,50 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
         // Link
 	lineptr = mmd_parse_link(doc, lineptr, &text, &url, &title, &refname);
 
-	if (text && *text == '`')
+	if (text)
 	{
 	  char *end = text + strlen(text) - 1;
+					// End of text fragment
 
-	  text ++;
-	  if (end > text && *end == '`')
-	    *end = '\0';
+	  if (*text == '`' && *end == '`' && end != text)
+	  {
+	    // Code text
+	    text ++;
+	    if (end > text && *end == '`')
+	      *end = '\0';
 
-	  node = mmd_add(parent, MMD_TYPE_CODE_TEXT, whitespace, text, url);
-	}
-	else if (text)
-	{
-	  node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+	    node = mmd_add(parent, MMD_TYPE_CODE_TEXT, whitespace, text, url);
+	  }
+	  else if (*text == '*' && *end == '*' && end > text)
+	  {
+	    // Emphasized or strong text
+	    text ++;
+	    if (*text == '*' && (end - 1) > text && end[-1] == '*')
+	    {
+	      text ++;
+	      end[-1] = '\0';
+	      node    = mmd_add(parent, MMD_TYPE_STRONG_TEXT, whitespace, text, url);
+	    }
+	    else
+	    {
+	      *end = '\0';
+	      node = mmd_add(parent, MMD_TYPE_EMPHASIZED_TEXT, whitespace, text, url);
+            }
+	  }
+	  else
+	  {
+	    // Plain linked text...
+	    node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+	  }
+
 	  if (title)
 	    node->extra = strdup(title);
 	}
 	else
+	{
+	  // No text, no node...
 	  node = NULL;
+	}
 
 	DEBUG2_printf("mmd_parse_inline: text=\"%s\", refname=\"%s\", node=%p\n", text, refname, node);
 
@@ -2002,7 +2028,7 @@ mmd_read_buffer(_mmd_filebuf_t *file)	// I - File buffer
     file->bufend += bytes;
 
   *(file->bufend) = '\0';
-  file->bufptr = file->buffer;
+  file->bufptr    = file->buffer;
 }
 
 
