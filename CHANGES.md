@@ -12,6 +12,7 @@ Changes in v2.0
 - Added mmdutil "--no-title" option to disable the generated HTML title page.
 - Updated `mmdGetWhitespace` and `mmdIsBlock` functions to return `bool` values.
 - Fixed an issue with headings directly after a table.
+- Fixed lists in man page output.
 
 
 Changes in v1.9

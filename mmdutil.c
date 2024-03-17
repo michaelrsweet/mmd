@@ -995,7 +995,8 @@ man_block(FILE	 *outfp,		// I - Output file
     case MMD_TYPE_HEADING_5 :
     case MMD_TYPE_HEADING_6 :
     case MMD_TYPE_PARAGRAPH :
-	fputs(".PP\n", outfp);
+        if (parent != mmdGetFirstChild(mmdGetParent(parent)))
+	  fputs(".PP\n", outfp);
 	break;
 
     case MMD_TYPE_CODE_BLOCK :
