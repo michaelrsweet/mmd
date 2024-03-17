@@ -3,7 +3,7 @@
 #
 #     https://github.com/michaelrsweet/mmd
 #
-# Copyright © 2017-2022 by Michael R Sweet.
+# Copyright © 2017-2024 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
@@ -75,6 +75,7 @@ testmmd:	mmd.o testmmd.o testmmd.md
 
 test:	testmmd
 	./testmmd testmmd.md >testmmd.html 2>testmmd.log
+	./testmmd - <testmmd.md >testmmd.html 2>>testmmd.log
 
 $(OBJS):	mmd.h Makefile
 

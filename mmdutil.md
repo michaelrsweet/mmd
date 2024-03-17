@@ -1,8 +1,8 @@
 ---
 title: mmdutil
 author: Michael R Sweet
-copyright: Copyright © 2017-2022 by Michael R Sweet
-version: 1.9
+copyright: Copyright © 2017-2024 by Michael R Sweet
+version: 2.0
 ...
 
 # Name
@@ -12,9 +12,13 @@ mmdutil - mini markdown utility program.
 
 # Synopsis
 
-mmdutil \[--cover filename.ext\] \[--css filename.css\] \[--front filename.md\] \[--toc levels\] \[-o filename.html\] filename.md \[... filenameN.md\]
+mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\] \[--toc LEVELS\] \[-o FILENAME.html\] FILENAME.md \[... FILENAME.md\]
 
-mmdutil \[--front filename.md\] \[--man section\] \[-o filename.man\] filename.md \[... filenameN.md\]
+mmdutil \[--cover FILENAME.ext\] \[--css FILENAME.css\] \[--front FILENAME.md\] \[--toc LEVELS\] \[-o FILENAME.html\] -
+
+mmdutil \[--front FILENAME.md\] \[--man SECTION\] \[-o FILENAME.man\] FILENAME.md \[... FILENAME.md\]
+
+mmdutil \[--front FILENAME.md\] \[--man SECTION\] \[-o FILENAME.man\] -
 
 mmdutil --help
 
@@ -29,6 +33,9 @@ as well as the metadata, "@" link, table, and task list markdown extensions.
 Because **mmdutil** supports non-HTML output formats, embedded HTML is
 explicitly *not* supported.
 
+**mmdutil** reads a list of markdown files and/or from the standard input if the
+filename "-" is specified.
+
 If no output file is specified using the "-o" option, **mmdutil** sends the
 generated document to the standard output.
 
@@ -37,15 +44,15 @@ generated document to the standard output.
 
 The following options are recognized by **mmdutil**:
 
-- "--cover filename.ext" specifies a cover image for HTML output.
-- "--css filename.css" specifies a style sheet for HTML output.
-- "--front filename.md" specifies front matter for the output.
+- "--cover FILENAME.ext" specifies a cover image for HTML output.
+- "--css FILENAME.css" specifies a style sheet for HTML output.
+- "--front FILENAME.md" specifies front matter for the output.
 - "--help" shows program usage.
-- "--man section" produces man page output for the specified section.
-- "--toc levels" produces a table of contents with the specified number of
+- "--man SECTION" produces man page output for the specified section.
+- "--toc LEVELS" produces a table of contents with the specified number of
   levels.
 - "--version" shows the program version.
-- "-o filename.ext" specifies the output file to write.  The default is the
+- "-o FILENAME.ext" specifies the output file to write.  The default is the
   standard output.
 
 
@@ -67,6 +74,10 @@ Generate a HTML file with a table of contents from three markdown files:
 Generate a man page from "example.md":
 
     mmdutil --man 1 example.md >example.1
+
+Use **mmdutil** as a markdown to HTML filter:
+
+    mymarkdownprog | mmdutil - | myhtmlprog
 
 
 # See Also

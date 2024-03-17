@@ -3,7 +3,7 @@
  *
  *     https://github.com/michaelrsweet/mmd
  *
- * Copyright © 2017-2022 by Michael R Sweet.
+ * Copyright © 2017-2024 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.  See the file "LICENSE" for more
  * information.
@@ -11,12 +11,10 @@
 
 #ifndef MMD_H
 #  define MMD_H
-
-/*
- * Include necessary headers...
- */
-
 #  include <stdio.h>
+#  ifdef __cplusplus
+extern "C" {
+#  endif /* __cplusplus */
 
 
 /*
@@ -84,10 +82,6 @@ typedef struct _mmd_s mmd_t;
  * Functions...
  */
 
-#  ifdef __cplusplus
-extern "C" {
-#  endif /* __cplusplus */
-
 extern char         *mmdCopyAllText(mmd_t *node);
 extern void         mmdFree(mmd_t *node);
 extern const char   *mmdGetExtra(mmd_t *node);
@@ -108,8 +102,8 @@ extern mmd_t        *mmdLoadFile(mmd_t *root, FILE *fp);
 extern mmd_t        *mmdLoadString(mmd_t *root, const char *s);
 extern void         mmdSetOptions(mmd_option_t options);
 
+
 #  ifdef __cplusplus
 }
 #  endif /* __cplusplus */
-
 #endif /* !MMD_H */

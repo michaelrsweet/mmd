@@ -3,7 +3,7 @@
  *
  *     https://github.com/michaelrsweet/mmd
  *
- * Copyright © 2017-2023 by Michael R Sweet.
+ * Copyright © 2017-2024 by Michael R Sweet.
  *
  * Licensed under Apache License v2.0.	See the file "LICENSE" for more
  * information.
@@ -48,10 +48,6 @@
 #endif /* _WIN32 */
 
 
-/*
- * Include necessary headers...
- */
-
 #include "mmd.h"
 #include <stdlib.h>
 #include <ctype.h>
@@ -75,7 +71,7 @@
 
 
 /*
- * Structures...
+ * Private structures...
  */
 
 struct _mmd_s
