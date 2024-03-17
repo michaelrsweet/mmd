@@ -1591,10 +1591,15 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	      node = mmd_add(parent, MMD_TYPE_EMPHASIZED_TEXT, whitespace, text, url);
             }
 	  }
-	  else
+	  else if (type == MMD_TYPE_NORMAL_TEXT)
 	  {
 	    // Plain linked text...
 	    node = mmd_add(parent, MMD_TYPE_LINKED_TEXT, whitespace, text, url);
+	  }
+	  else
+	  {
+	    // Preserve style of linked text...
+	    node = mmd_add(parent, type, whitespace, text, url);
 	  }
 
 	  if (title)

@@ -104,9 +104,13 @@ Normal link to [Heading 1](@).
 
 Code link to [`Heading 2`](@).
 
-Emphasized link to [*Heading 3*](@).
+Inner emphasized link to [*Heading 3*](@).
 
-Strong link to [**Heading 4**](@).
+Outer emphasized link to *[Heading 3](@)*.
+
+Inner strong link to [**Heading 4**](@).
+
+Outer strong link to **[Heading 4](@)**.
 
 Implicit link to [reference1][].
 

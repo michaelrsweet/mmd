@@ -11,7 +11,7 @@ Changes in v2.0
   markdown files.
 - Added mmdutil "--no-title" option to disable the generated HTML title page.
 - Updated `mmdGetWhitespace` and `mmdIsBlock` functions to return `bool` values.
-- Fixed support for emphasized or strong text within a link (Issue #15)
+- Fixed support for emphasized or strong linked text (Issue #15)
 - Fixed an issue with headings directly after a table.
 - Fixed lists in man page output.
 
