@@ -1416,7 +1416,15 @@ mmd_is_codefence(char	*lineptr,	// I - Line
       *language = lineptr;
 
       while (*lineptr && !isspace(*lineptr & 255))
+      {
+	if (*lineptr == '\\' && lineptr[1])
+	{
+	  // Remove "\"
+	  memmove(lineptr, lineptr + 1, strlen(lineptr));
+	}
+
 	lineptr ++;
+      }
       *lineptr = '\0';
     }
   }
@@ -1733,7 +1741,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	type = MMD_TYPE_NORMAL_TEXT;
       }
     }
-    else if (*lineptr == '`')
+    else if (*lineptr == '`' && (type != MMD_TYPE_CODE_TEXT || lineptr[-1] != '\\'))
     {
       if (type != MMD_TYPE_NORMAL_TEXT || !delim)
       {
@@ -1779,6 +1787,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	    textptr --;
 
 	  *textptr = '\0';
+	  lineptr += delimlen - 1;
 	}
 
 	if (type == MMD_TYPE_CODE_TEXT)
@@ -1801,7 +1810,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	DEBUG2_puts("mmd_parse_inline: Reverting to normal text.\n");
 
 	type	 = MMD_TYPE_NORMAL_TEXT;
-	lineptr += delimlen - 1;
+	lineptr  += delimlen - 2;
 	delim	 = NULL;
 	delimlen = 0;
       }
@@ -1810,20 +1819,30 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	type	= MMD_TYPE_CODE_TEXT;
 	lineptr += delimlen - 1;
 
-	if (isspace(lineptr[1] & 255))
-	{
-	  whitespace = 1;
-
-	  while (isspace(lineptr[1] & 255))
-	    lineptr ++;
-	}
+	while (isspace(lineptr[1] & 255))
+	  lineptr ++;
 
 	text = lineptr + 1;
       }
     }
+    else if (!strncmp(lineptr, "\\\n", 2))
+    {
+      // Hard break
+      *lineptr++ = '\0';
+
+      if (text)
+      {
+        mmd_add(parent, type, whitespace, text, NULL);
+
+        text       = NULL;
+        whitespace = false;
+      }
+
+      mmd_add(parent, MMD_TYPE_HARD_BREAK, false, NULL, NULL);
+    }
     else if (!text)
     {
-      if (*lineptr == '\\' && lineptr[1] && lineptr[1] != '\n')
+      if (*lineptr == '\\' && ispunct(lineptr[1] & 255) && type != MMD_TYPE_CODE_TEXT)
       {
         // Escaped character...
 	lineptr ++;
@@ -1831,7 +1850,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 
       text = lineptr;
     }
-    else if (*lineptr == '\\' && lineptr[1] && lineptr[1] != '\n')
+    else if (*lineptr == '\\' && ispunct(lineptr[1] & 255) && type != MMD_TYPE_CODE_TEXT)
     {
       // Escaped character...
       memmove(lineptr, lineptr + 1, strlen(lineptr));
@@ -1894,7 +1913,22 @@ mmd_parse_link(_mmd_doc_t *doc,		// I - Document
     while (*lineptr && *lineptr != ')')
     {
       if (isspace(*lineptr & 255))
+      {
 	*lineptr = '\0';
+      }
+      else if (*lineptr == '\\' && lineptr[1])
+      {
+        if (lineptr[1] == ')')
+        {
+	  // Remove "\"
+	  memmove(lineptr, lineptr + 1, strlen(lineptr));
+	}
+	else
+	{
+	  // Keep "\"
+	  lineptr ++;
+	}
+      }
       else if (*lineptr == '\"' || *lineptr == '\'')
       {
 	char quote = *lineptr++;
@@ -1903,7 +1937,15 @@ mmd_parse_link(_mmd_doc_t *doc,		// I - Document
 	  *title = lineptr;
 
 	while (*lineptr && *lineptr != quote)
+	{
+	  if (*lineptr == '\\' && lineptr[1])
+	  {
+	    // Remove "\"
+	    memmove(lineptr, lineptr + 1, strlen(lineptr));
+	  }
+
 	  lineptr ++;
+	}
 
 	if (!*lineptr)
 	  return (lineptr);
@@ -1925,11 +1967,21 @@ mmd_parse_link(_mmd_doc_t *doc,		// I - Document
     while (*lineptr && *lineptr != ']')
     {
       if (isspace(*lineptr & 255))
+      {
 	*lineptr = '\0';
+      }
       else if (*lineptr == '\\' && lineptr[1])
       {
-        // Remove "\"
-	memmove(lineptr, lineptr + 1, strlen(lineptr));
+        if (lineptr[1] == ']')
+        {
+	  // Remove "\"
+	  memmove(lineptr, lineptr + 1, strlen(lineptr));
+	}
+	else
+	{
+	  // Keep "\"
+	  lineptr ++;
+	}
       }
       else if (*lineptr == '\"' || *lineptr == '\'')
       {
@@ -1964,7 +2016,15 @@ mmd_parse_link(_mmd_doc_t *doc,		// I - Document
     *url = lineptr;
 
     while (*lineptr && !isspace(*lineptr & 255))
+    {
+      if (*lineptr == '\\' && lineptr[1])
+      {
+        // Remove "\"
+	memmove(lineptr, lineptr + 1, strlen(lineptr));
+      }
+
       lineptr ++;
+    }
 
     if (*lineptr)
     {
@@ -1980,7 +2040,15 @@ mmd_parse_link(_mmd_doc_t *doc,		// I - Document
 	  *title = lineptr;
 
 	while (*lineptr && *lineptr != quote)
+	{
+	  if (*lineptr == '\\' && lineptr[1])
+	  {
+	    // Remove "\"
+	    memmove(lineptr, lineptr + 1, strlen(lineptr));
+	  }
+
 	  lineptr ++;
+	}
 
 	if (!*lineptr)
 	  return (lineptr);

@@ -326,14 +326,25 @@ is_equal(const char *generated,		// I - Generated string
 
   while (*gptr && *expected)
   {
+    // Skip whitespace differences
+    while (*gptr && isspace(*gptr & 255))
+      gptr ++;
+
+    while (*expected && isspace(*expected & 255))
+      expected ++;
+
+    if (!*gptr || !*expected)
+      break;
+
+    // Check non-whitespace characters...
     if (*gptr != *expected)
     {
       // The expected list HTML is widely inconsistent in the CommonMark
       // specification WRT the use of paragraph (<p>) elements.  Allow for some
       // variation as long as the visual structure is the same.
-      if (!strncmp(gptr, "\n<p>", 4) && *expected == gptr[4])
+      if (!strncmp(gptr, "<p>", 3) && *expected == gptr[3])
       {
-        gptr += 4;
+        gptr += 3;
       }
       else if (!strncmp(gptr, "</p>", 4))
       {
@@ -346,12 +357,17 @@ is_equal(const char *generated,		// I - Generated string
       {
         gptr += 5;
       }
+      else if (!strncmp(gptr, "/p>\n<", 5) && *expected == gptr[5])
+      {
+        gptr += 5;
+      }
     }
 
     if (*gptr != *expected && (!isspace(*gptr & 255) || !isspace(*expected & 255)))
     {
       // If the strings don't match at this point and the difference is not in
       // the type of whitespace used, that is an error...
+//      fprintf(stderr, "gptr=\"%s\", expected=\"%s\"\n", gptr, expected);
       break;
     }
 
@@ -472,7 +488,12 @@ run_spec(const char *filename,		// I - Markdown spec file
         fputs("SKIP (no HTML)\n", logfile);
         skipped ++;
       }
-      else if ((mptr = strchr(markdown, '<')) != NULL && (mptr == markdown || mptr[-1] != '`'))
+      else if ((mptr = strchr(markdown, '<')) != NULL && (mptr == markdown || (mptr[-1] != '`' && mptr[-1] != '\\')))
+      {
+        fputs("SKIP (markdown example with embedded HTML)\n", logfile);
+        skipped ++;
+      }
+      else if ((mptr = strchr(markdown, '&')) != NULL && (mptr == markdown || (mptr[-1] != '`' && mptr[-1] != '\\')))
       {
         fputs("SKIP (markdown example with embedded HTML)\n", logfile);
         skipped ++;

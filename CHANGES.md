@@ -13,6 +13,7 @@ Changes in v2.0
 - Updated `mmdGetWhitespace` and `mmdIsBlock` functions to return `bool` values.
 - Fixed support for emphasized or strong linked text (Issue #15)
 - Fixed an issue with headings directly after a table.
+- Fixed some more issues with the Commonmark tests.
 - Fixed lists in man page output.
 
 
