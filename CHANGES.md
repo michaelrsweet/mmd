@@ -5,7 +5,7 @@ Changes in mmd
 Changes in v2.0
 ---------------
 
-- Added `mxmlLoadIO` and `mxmlLoadString` APIs (Issue #12)
+- Added `mmdLoadIO` and `mmdLoadString` APIs (Issue #12)
 - Added mmdutil "-" filename/option to read markdown from stdin (Issue #16)
 - Added a document pointer to the other load functions to allow concatenation of
   markdown files.
