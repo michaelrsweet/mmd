@@ -3,8 +3,8 @@ mmd - Miniature Markdown Library
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/mmd?include_prereleases)
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/mmd)
-[![Build Status](https://img.shields.io/github/workflow/status/michaelrsweet/mmd/Build)](https://github.com/michaelrsweet/mmd/actions/workflows/build.yml)
-[![Coverity Scan Status](https://img.shields.io/coverity/scan/22387.svg)](https://scan.coverity.com/projects/michaelrsweet-mmd)
+![Build Status](https://img.shields.io/github/actions/workflow/status/michaelrsweet/mmd/build.yml?branch=master)
+![Coverity Scan Status](https://img.shields.io/coverity/scan/22387.svg)
 
 `mmd` is a miniature markdown parsing "library" consisting of a single C source
 file and accompanying header file.  `mmd` mostly conforms to the [CommonMark][]
