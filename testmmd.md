@@ -225,4 +225,5 @@ be interpreted as a table.
 
 - First item
 - Second item
-
+- Some pathological nested link and inline style features supported by
+  CommonMark like "`******Really Strong Text******`".

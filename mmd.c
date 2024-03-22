@@ -1810,7 +1810,6 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 	DEBUG2_puts("mmd_parse_inline: Reverting to normal text.\n");
 
 	type	 = MMD_TYPE_NORMAL_TEXT;
-	lineptr  += delimlen - 2;
 	delim	 = NULL;
 	delimlen = 0;
       }
@@ -1858,7 +1857,10 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
   }
 
   if (text)
+  {
+    DEBUG_puts("mms_parse_inline: Adding text at end.\n");
     mmd_add(parent, type, whitespace, text, NULL);
+  }
 }
 
 
