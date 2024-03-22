@@ -117,7 +117,9 @@ Implicit link to [reference1][].
 Shortcut link to [reference1] without a link title.
 
 [reference1]: https://michaelrsweet.github.io/mmd 'MMD Home Page'
+
 [reference2]: https://michaelrsweet.github.io/mmd/mmd.html 'MMD Documentation'
+
 [reference3]: https://michaelrsweet.github.io/mmd/mmd-160.png "MMD Logo"
 
 Link to [mmd web site][reference1] works.
