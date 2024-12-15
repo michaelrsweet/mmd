@@ -9,7 +9,7 @@
 # information.
 #
 
-VERSION	=	2.0
+VERSION	=	2.1
 prefix	=	$(DESTDIR)/usr/local
 bindir	=	$(prefix)/bin
 mandir	=	$(prefix)/share/man
