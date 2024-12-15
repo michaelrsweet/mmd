@@ -2,8 +2,14 @@ Changes in mmd
 ==============
 
 
-Changes in v2.0
----------------
+Changes in v2.1 (YYYY-MM-DD)
+----------------------------
+
+- Fixed '>' incorrectly exiting a code block.
+
+
+Changes in v2.0 (2024-03-22)
+----------------------------
 
 - Added `mmdLoadIO` and `mmdLoadString` APIs (Issue #12)
 - Added mmdutil "-" filename/option to read markdown from stdin (Issue #16)
@@ -17,16 +23,16 @@ Changes in v2.0
 - Fixed lists in man page output.
 
 
-Changes in v1.9
----------------
+Changes in v1.9 (2022-03-01)
+----------------------------
 
 - Added support for the Github-flavored markdown task list extension (check
   boxes in lists)
 - Addressed some issues found by the Clang static analyzer.
 
 
-Changes in v1.8
----------------
+Changes in v1.8 (2021-01-04)
+----------------------------
 
 - Markdown of the form `([title](link))` did not parse correctly.
 - Addressed an issue identified by the LGTM code scanner.
@@ -38,8 +44,8 @@ Changes in v1.8
   the `mmd` sources.
 
 
-Changes in v1.7
----------------
+Changes in v1.7 (2019-08-28)
+----------------------------
 
 The following changes were made for v1.7:
 
@@ -47,8 +53,8 @@ The following changes were made for v1.7:
 - Fixed block-quoted Setext heading parsing.
 
 
-Changes in v1.6
----------------
+Changes in v1.6 (2019-08-18)
+----------------------------
 
 The following changes were made for v1.6:
 
@@ -71,8 +77,8 @@ The following changes were made for v1.6:
   string associated with certain nodes.
 
 
-Changes in v1.5
----------------
+Changes in v1.5 (2019-02-17)
+----------------------------
 
 The following changes were made for v1.5:
 
@@ -81,8 +87,8 @@ The following changes were made for v1.5:
   line breaks (Issue #4)
 
 
-Changes in v1.4
----------------
+Changes in v1.4 (2019-01-04)
+----------------------------
 
 The following changes were made for v1.4:
 
@@ -94,8 +100,8 @@ The following changes were made for v1.4:
 - Fixed a build issue with Visual Studio.
 
 
-Changes in v1.3
----------------
+Changes in v1.3 (2018-02-10)
+----------------------------
 
 The following changes were made for v1.3:
 
@@ -104,8 +110,8 @@ The following changes were made for v1.3:
 - Added `mmdutil` program for converting markdown to HTML and man files.
 
 
-Changes in v1.2
----------------
+Changes in v1.2 (2018-02-02)
+----------------------------
 
 The following changes were made for v1.2:
 
@@ -113,8 +119,8 @@ The following changes were made for v1.2:
 - Added support for markdown tables (Issue #3)
 
 
-Changes in v1.1
----------------
+Changes in v1.1 (2017-10-30)
+----------------------------
 
 The following changes were made for v1.1:
 
@@ -126,3 +132,8 @@ The following changes were made for v1.1:
 - Fixed a parsing bug for escaped characters followed by unescaped formatting
   sequences.
 - Fixed a parsing bug for headings that follow a list.
+
+Changes in v1.0 (2017-04-23)
+----------------------------
+
+- Initial release.
