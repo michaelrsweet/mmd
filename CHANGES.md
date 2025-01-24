@@ -6,6 +6,7 @@ Changes in v2.1 (YYYY-MM-DD)
 ----------------------------
 
 - Fixed '>' incorrectly exiting a code block.
+- Fixed an off-by-1 error in the read buffer that could yield corrupt output.
 
 
 Changes in v2.0 (2024-03-22)
