@@ -1147,9 +1147,6 @@ mmd_add(mmd_t	   *parent,		// I - Parent node
   if (!parent && type != MMD_TYPE_DOCUMENT)
     return (NULL);			// Only document nodes can be at the root
 
-  if (text && !strncmp(text, "Wh", 2))
-    fprintf(stderr, "mmd_add: text=\"%s\" %p\n", text, text);
-
   if ((temp = calloc(1, sizeof(mmd_t))) != NULL)
   {
     if (parent)

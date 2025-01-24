@@ -81,7 +81,7 @@ to install it in `/usr/local` along with a man page.
 Legal Stuff
 -----------
 
-Copyright © 2017-2024 by Michael R Sweet.
+Copyright © 2017-2025 by Michael R Sweet.
 
 mmd is licensed under the Apache License Version 2.0 with an (optional)
 exception to allow linking against GPL2/LGPL2-only software.  See the files
