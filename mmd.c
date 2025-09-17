@@ -179,6 +179,8 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
     if (current->text)
     {
       // Append this node's text to the string...
+      long alloff = allptr - all;	// Offset within current buffer
+
       textlen = strlen(current->text);
       allsize += textlen + (size_t)current->whitespace;
       temp    = realloc(all, allsize);
@@ -189,8 +191,8 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
 	return (NULL);
       }
 
-      allptr = temp + (allptr - all);
       all    = temp;
+      allptr = all + alloff;
 
       if (current->whitespace)
 	*allptr++ = ' ';
