@@ -92,7 +92,7 @@ typedef struct _mmd_filebuf_s		// Buffered file
 {
   mmd_iocb_t	cb;			// Read callback function
   void		*cbdata;		// Read callback data
-  char		buffer[8192],		// Buffer
+  char		buffer[65536],		// Buffer
 		*bufptr,		// Pointer into buffer
 		*bufend;		// End of buffer
 } _mmd_filebuf_t;

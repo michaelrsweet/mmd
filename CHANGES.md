@@ -5,6 +5,7 @@ Changes in mmd
 Changes in v2.1 (YYYY-MM-DD)
 ----------------------------
 
+- Increased the default paragraph/line buffer to 64k.
 - Fixed '>' incorrectly exiting a code block.
 - Fixed an off-by-1 error in the read buffer that could yield corrupt output.
 - Make a change to avoid a bogus use-after-free warning.
